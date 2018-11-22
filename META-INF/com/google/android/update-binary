@@ -15,7 +15,7 @@
 #                                                                                        #
 ##########################################################################################
 
-INSTALLERVER="2.6 beta"
+INSTALLERVER="2.7"
 
 # Detect whether in boot mode
 ps | grep zygote | grep -v grep >/dev/null && BOOTMODE=true || BOOTMODE=false
@@ -236,6 +236,29 @@ else
     DETACH=YES
 fi
 
+# Check if detach only setting file is available
+DETACHONLY=$(ls /data/media/*/${SEARCHFOLDER}/iYTBP_only_detach_from_playstore.plz 2>/dev/null | sort | tail -n1)
+if echo "$DETACHONLY" | grep -vq plz; then
+    DETACHONLY=$(ls /data/media/*/iYTBP_only_detach_from_playstore.plz 2>/dev/null | sort | tail -n1)
+    if echo "$DETACHONLY" | grep -vq plz; then
+	DETACHONLY=$(ls /mnt/expand/*/media/*/${SEARCHFOLDER}/iYTBP_only_detach_from_playstore.plz 2>/dev/null | sort | tail -n1)
+	if echo "$DETACHONLY" | grep -vq plz; then
+	    DETACHONLY=$(ls /mnt/expand/*/media/*/iYTBP_only_detach_from_playstore.plz 2>/dev/null | sort | tail -n1)
+	    if echo "$DETACHONLY" | grep -vq plz; then
+	        DETACHONLY=NO
+	    else
+	        DETACHONLY=YES
+	    fi
+	else
+	    DETACHONLY=YES
+	fi
+    else
+	DETACHONLY=YES
+    fi
+else
+    DETACHONLY=YES
+fi
+
 # Check if attach setting file is available
 ATTACH=$(ls /data/media/*/${SEARCHFOLDER}/iYTBP_attach_to_playstore.plz 2>/dev/null | sort | tail -n1)
 if echo "$ATTACH" | grep -vq plz; then
@@ -247,16 +270,39 @@ if echo "$ATTACH" | grep -vq plz; then
 	    if echo "$ATTACH" | grep -vq plz; then
 	        ATTACH=NO
 	    else
-	        ATTACH=NO
+	        ATTACH=YES
 	    fi
 	else
-	    ATTACH=NO
+	    ATTACH=YES
 	fi
     else
-	ATTACH=NO
+	ATTACH=YES
     fi
 else
-    ATTACH=NO
+    ATTACH=YES
+fi
+
+# Check if attach only setting file is available
+ATTACHONLY=$(ls /data/media/*/${SEARCHFOLDER}/iYTBP_only_attach_to_playstore.plz 2>/dev/null | sort | tail -n1)
+if echo "$ATTACHONLY" | grep -vq plz; then
+    ATTAACHONLY=$(ls /data/media/*/iYTBP_only_attach_to_playstore.plz 2>/dev/null | sort | tail -n1)
+    if echo "$ATTACHONLY" | grep -vq plz; then
+	ATTACHONLY=$(ls /mnt/expand/*/media/*/${SEARCHFOLDER}/iYTBP_only_attach_to_playstore.plz 2>/dev/null | sort | tail -n1)
+	if echo "$ATTACHONLY" | grep -vq plz; then
+	    ATTAACHONLY=$(ls /mnt/expand/*/media/*/iYTBP_only_attach_to_playstore.plz 2>/dev/null | sort | tail -n1)
+	    if echo "$ATTACHONLY" | grep -vq plz; then
+	        ATTACHONLY=NO
+	    else
+	        ATTACHONLY=YES
+	    fi
+	else
+	    ATTACHONLY=YES
+	fi
+    else
+	ATTACHONLY=YES
+    fi
+else
+    ATTACHONLY=YES
 fi
 
 # Check if magisk mode setting file is available
@@ -445,11 +491,48 @@ if [ "$UNINSTALL" = "YES" ]; then
 	if echo "$UNINSTALL" | grep -q plz; then
 	    rm -f $UNINSTALL
 	fi
+	DETACHONLY=$(ls /data/media/*/iYTBP_only_detach_from_playstore.plz 2>/dev/null | sort | tail -n1)
+	if echo "$DETACHONLY" | grep -q plz; then
+	    rm -f $DETACHONLY
+	fi
+	ATTACHONLY=$(ls /data/media/*/iYTBP_only_attach_to_playstore.plz 2>/dev/null | sort | tail -n1)
+	if echo "$ATTACHONLY" | grep -q plz; then
+	    rm -f $ATTACHONLY
+	fi
+	DETACHONLY=$(ls /data/media/*/${SEARCHFOLDER}/iYTBP_only_detach_from_playstore.plz 2>/dev/null | sort | tail -n1)
+	if echo "$DETACHONLY=" | grep -q plz; then
+	    rm -f $DETACHONLY
+	fi
+	ATTACHONLY=$(ls /data/media/*/${SEARCHFOLDER}/iYTBP_only_attach_to_playstore.plz 2>/dev/null | sort | tail -n1)
+	if echo "$ATTACHONLY" | grep -q plz; then
+	    rm -f $ATTACHONLY
+	fi
+	DETACHONLY=$(ls /storage/emulated/*/iYTBP_only_detach_from_playstore.plz 2>/dev/null | sort | tail -n1)
+	if echo "$DETACHONLY" | grep -q plz; then
+	    rm -f $DETACHONLY
+	fi
+	ATTACHONLY=$(ls /mnt/expand/*/media/*/iYTBP_only_attach_to_playstore.plz 2>/dev/null | sort | tail -n1)
+	if echo "$ATTACHONLY" | grep -q plz; then
+	    rm -f $ATTACHONLY
+	fi
+	DETACHONLY=$(ls /mnt/expand/*/media/*/${SEARCHFOLDER}/iYTBP_only_detach_from_playstore.plz 2>/dev/null | sort | tail -n1)
+	if echo "$DETACHONLY" | grep -q plz; then
+	    rm -f $DETACHONLY
+	fi
+	ATTACHONLY=$(ls /mnt/expand/*/media/*/${SEARCHFOLDER}/iYTBP_only_attach_to_playstore.plz 2>/dev/null | sort | tail -n1)
+	if echo "$ATTACHONLY" | grep -q plz; then
+	    rm -f $ATTACHONLY
+	fi
+
 	# Turn on uninstallation and turn off all install settings
 	UNINSTALL=YES
 	MAGINSTALL=NO
 	DETACH=NO
-	ATTACH=NO
+	if [ -e /data/iytbp-detach-installed ]; then
+	    ATTACH=YES
+	else
+	    ATTACH=NO
+	fi
 	# Turn off uninstall again for next usage of config file
 	sed -i 's/UNINSTALL\=\"YES\"/UNINSTALL\=\"NO\"/g' $CONFIG
     else
@@ -459,6 +542,10 @@ fi
 
 # Detach/Attach both can't be
 if [ "$ATTACH" = "YES" ] && [ "$DETACH" = "YES" ]; then
+    attach_detach_conflict
+fi
+
+if [ "$ATTACHONLY" = "YES" ] && [ "$DETACHONLY" = "YES" ]; then
     attach_detach_conflict
 fi
 
@@ -521,9 +608,11 @@ if [ "$UNINSTALL" = "NO" ]; then
 		if echo "$APK" | grep -ivq apk; then
 		    APK=$(ls /data/media/*/${SEARCHFOLDER}/${APKFILENAMEOLD} 2>/dev/null | sort | tail -n1)
 		    if echo "$APK" | grep -ivq apk; then
-		        APK=$(ls /mnt/expand/*/media/*/${SEARCHFOLDER}/${APKFILENAMEOLD} 2>/dev/null | sort | tail -n1)
-		        if echo "$APK" | grep -ivq apk; then
-			    apk_not_found
+			APK=$(ls /mnt/expand/*/media/*/${SEARCHFOLDER}/${APKFILENAMEOLD} 2>/dev/null | sort | tail -n1)
+			if echo "$APK" | grep -ivq apk; then
+			    if [ "$DETACHONLY" = "NO" ] && [ "$ATTACHONLY" = "NO" ]; then
+				apk_not_found
+			    fi
 			fi
 		    fi
 		fi
@@ -533,7 +622,7 @@ if [ "$UNINSTALL" = "NO" ]; then
 fi
 
 # Prepare Detach script if detach settings files is in download folder
-if [ "$DETACH" = "YES" ]; then
+if [ "$DETACH" = "YES" -o "$DETACHONLY" = "YES" ]; then
     ui_print "- Detach requested, preparing detach script"
     touch $DETACHFILE
     echo '#!/system/bin/sh' >> $DETACHFILE
@@ -589,45 +678,55 @@ if [ "$DETACH" = "YES" ]; then
 		if [ ! -e /ssu/su.d ]; then
 			mkdir /ssu/su.d
 		fi
-		cp -f $SQLITEMP $SQLITESU
-		chgrp 2000 $SQLITESU
-		chmod 0755 $SQLITESU
-		cp -f $DETACH $SSUDS
-		chmod 0755 $SSUDS
+		cp -f "$SQLITEMP" "$SQLITESU"
+		chgrp 2000 "$SQLITESU"
+		chmod 0755 "$SQLITESU"
+		cp -f "$DETACHFILE" "$SSUDS"
+		chmod 0755 "$SSUDS"
 		ui_print "- Module created, unmounting /ssu again"
 		umount /ssu 2>/dev/null
-		exit 0
+		echo "Please keep this file! It's a flag for the iYTBP universal installer." > /data/iytbp-detach-installed
+		if [ "$DETACHONLY" = "YES" ]; then
+		    ui_print "done! Please reboot."
+		    exit 0
+		fi
 	else
 		if [ -e $INIT ]; then
 			ui_print "- Detach script will be installed to init.d folder"
-			cp -f $DETACH $INITD
-			chmod 0755 $INITD
+			cp -f "$DETACHFILE" "$INITD"
+			chmod 0755 "$INITD"
 		else
 			ui_print "- Detach script will be installed to su.d folder"
 			if [ ! -e $SUD ]; then
 				mkdir $SUD
 			fi
-			cp -f $DETACH $SUDS
-			chmod 0755 $SUDS
+			cp -f "$DETACHFILE" "$SUDS"
+			chmod 0755 "$SUDS"
 		fi
-		cp -f $SQLITEMP $SQLITES
-		chgrp 2000 $SQLITES
-		chmod 0755 $SQLITES
-		exit 0
+		cp -f "$SQLITEMP" "$SQLITES"
+		chgrp 2000 "$SQLITES"
+		chmod 0755 "$SQLITES"
+		if [ "$DETACHONLY" = "YES" ]; then
+		    ui_print "done! Please reboot."
+		    exit 0
+		fi
 	fi
 
 	# use addon.d as last resort
 	if [ ! -e $MAGIMG ] && [ ! -e $SUIMG ] && [ -e $ADDOND ]; then
 		ui_print "- Detach script will be installed to addon.d folder"
-		cp -f $ADDON $ADDOND/90-iYTBP-detach.sh
-		chmod 0755 $ADDOND/90-iYTBP-detach.sh
-		exit 0
+		cp -f "$ADDON" "${ADDOND}/90-iYTBP-detach.sh"
+		chmod 0755 "${ADDOND}/90-iYTBP-detach.sh"
+		if [ "$DETACHONLY" = "YES" ]; then
+		    ui_print "done! Please reboot."
+		    exit 0
+		fi
 	fi
     fi
 fi
 
 # Prepare attach script if attach setting file is in download folder this will remove and undo the detachment parts (done as above by using the available init systems)
-if [ "$ATTACH" = "YES" ]; then
+if [ "$ATTACH" = "YES" -o "$ATTACHONLY" = "YES" ]; then
     ui_print "- Attach requested, removing detach module after next boot"
     if [ -e $INITD ] || [ -e $SUDS ] || [ -e $SQLITES ]; then
 	rm $INITD
@@ -644,6 +743,7 @@ if [ "$ATTACH" = "YES" ]; then
 		mkdir /ssu
 		mount -t ext4 -o rw $SUIMG /ssu
 		rm $SQLITESU
+		rm -f /data/iytbp-detach-installed
 		if [ -e $SSUDS ]; then
 			echo '#!/system/bin/sh' > $SSUDS
 			echo '' >> $SSUDS
@@ -658,7 +758,10 @@ if [ "$ATTACH" = "YES" ]; then
 			echo 'done &)' >> $SSUDS
 		fi
 		umount /ssu 2>/dev/null
-		exit 0
+		if [ "$ATTACHONLY" = "YES" ]; then
+		    ui_print "done! Please reboot."
+		    exit 0
+		fi
 	else
 		if [ -e $INITD ]; then
 			ui_print "- Detach module will be removed from init.d"
@@ -675,7 +778,11 @@ if [ "$ATTACH" = "YES" ]; then
 			echo '  exit; fi' >> $INITD
 			echo 'done &)' >> $INITD
 			rm $SQLITES
-			exit 0
+			rm -f /data/iytbp-detach-installed
+			if [ "$ATTACHONLY" = "YES" ]; then
+			    ui_print "done! Please reboot."
+			    exit 0
+			fi
 		else
 			if [ -e $SUDS ]; then
 				ui_print "- Detach module will be removed from su.d"
@@ -692,26 +799,36 @@ if [ "$ATTACH" = "YES" ]; then
 				echo '  exit; fi' >> $SUDS
 				echo 'done &)' >> $SUDS
 				rm $SQLITES
-				exit 0
+				rm -f /data/iytbp-detach-installed
+				if [ "$ATTACHONLY" = "YES" ]; then
+				    ui_print "done! Please reboot."
+				    exit 0
+				fi
 			fi
 		fi
 		rm $ADDOND/90-iYTBP-detach.sh
 		rm $SQLITES
-		exit 0
+		rm -f /data/iytbp-detach-installed
+		if [ "$ATTACHONLY" = "YES" ]; then
+		    ui_print "done! Please reboot."
+		    exit 0
+		fi
 	fi
     fi
 fi
 
 # Use magisk installer if magisk setting file is available (this partially works also in Magisk manager)
-if [ "$UNINSTALL" = "NO" ]; then
+if [ "$UNINSTALL" = "NO" ] && [ "$DETACHONLY" = "NO" ] && [ "$ATTACHONLY" = "NO" ]; then
     if [ "$MAGINSTALL" = "YES" ]; then
 	ui_print "- Using Magisk installer"
+	rm -f /data/iytbp-root-install
     else
 	ui_print "- Using regular Root installer"
+	DOPOSTROOT=NO
 	if $BOOTMODE; then
 	    deny_bootup_mode
 	fi
-
+	echo "Please keep this file! It's a flag for the iYTBP universal installer." > /data/iytbp-root-install
 	# iYTBP installer based on arter97 youtube adaway installer modified for the iYTBP project
 	ui_print "- Using $APK";
 	ui_print "- Removing previous versions (incl. magisk module)"
@@ -771,7 +888,7 @@ if [ "$UNINSTALL" = "NO" ]; then
 	    if [ -e $MAGIMG ]; then
 		ui_print "- But now going on with attach/detach module install"
 		DOPOSTROOT=YES
-	    else 
+	    else
 		echo "Please reboot."
 		ui_print " "
 		exit 0
@@ -810,6 +927,20 @@ fi
 if ! $BOOTMODE; then
     ui_print "- Unmounting partition /system"
     umount /system 2>/dev/null
+fi
+
+# exit here if we uninstall and no magisk is used but go on if we need to attach
+if [ "$DOPOSTROOT" = "" ] && [ "$ATTACH" = "NO" ]; then
+    if [ -e /data/iytbp-root-install -a "$UNINSTALL" = "YES" ]; then
+	rm -f /data/iytbp-root-install
+	ui_print "- Unmounting partition /data"
+	umount /data 2>/dev/null
+	ui_print "- Uninstallation done. Please reboot!"
+	ui_print " "
+	exit 0
+    fi
+elif [ -e /data/iytbp-root-install -a "$UNINSTALL" = "YES" ]; then
+    rm -f /data/iytbp-root-install
 fi
 
 # Here comes the Magisk module installation part by topjohnwu modified for the iYTBP project
@@ -924,7 +1055,7 @@ if [ "$UNINSTALL" = "YES" -o "$DOPOSTROOT" = "YES" ]; then
 fi
 
 # Generate/install iYTBP detach module
-if [ "$DETACH" = "YES" ]; then
+if [ "$DETACH" = "YES" -o "$DETACHONLY" = "YES" ]; then
 	if [ ! -e $MAGMOD ]; then
 		mkdir $MAGMOD
 	fi
@@ -945,11 +1076,13 @@ if [ "$DETACH" = "YES" ]; then
 	echo 'support=http://forum.xda-developers.com/android/software-hacking/mod-detach-market-links-theme-ready-apps-t3447494' >> $MAGMOD/module.prop
 	echo 'template=1400' >> $MAGMOD/module.prop
 	ui_print "- Detach module created, unmounting $MOUNTPATH again"
+	echo  > /data/iytbp-detach-installed
 fi
 
 # Generate/install iYTBP attach script
-if [ "$ATTACH" = "YES" ]; then
+if [ "$ATTACH" = "YES" -o "$ATTACHONLY" = "YES" ]; then
 	rm $SQLITEM
+	rm -f /data/iytbp-detach-installed
 	if [ -e $MAGSH ]; then
 		echo '#!/system/bin/sh' > $MAGSH
 		echo '' >> $MAGSH

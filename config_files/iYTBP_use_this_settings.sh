@@ -14,7 +14,8 @@
 # Path where to search for iYTBP Apk's
 # (must be a subfolder on sdcard!)
 # possible values: a valid folder/subfolder
-# on sdcard
+# on sdcard NOTE: u also can use wildcards
+# eg. like in the preset folder setting below
 SEARCHFOLDER="*ownload*"
 
 # Use magisk installation instead of 
@@ -23,14 +24,30 @@ SEARCHFOLDER="*ownload*"
 MAGINSTALL="NO"
 
 # Detach Youtube from playstore to 
-# disable update notifications 
+# disable update notifications
+# NOTE: use this in combination with 
+# apk install if u want both modules
+# get installed at the same time
 # possible values: YES/NO
 DETACH="NO"
+
+# Detach Youtube from playstore to 
+# disable update notifications 
+# possible values: YES/NO
+DETACHONLY="NO"
+
+# Attach Youtube to playstore if it was 
+# previously detached 
+# NOTE: use this in combination with 
+# apk install if u want both modules
+# get installed at the same time
+# possible values: YES/NO
+ATTACH="NO"
 
 # Attach Youtube to playstore if it was 
 # previously detached 
 # possible values: YES/NO
-ATTACH="NO"
+ATTACHONLY="NO"
 
 # Completely uninstall iYTBP: root version, 
 # magisk module and detach module 
