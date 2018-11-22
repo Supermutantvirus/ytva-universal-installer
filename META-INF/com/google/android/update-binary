@@ -15,7 +15,7 @@
 #                                                                                        #
 ##########################################################################################
 
-INSTALLERVER="2.3 beta"
+INSTALLERVER="2.4 beta"
 
 # Detect whether in boot mode
 ps | grep zygote | grep -v grep >/dev/null && BOOTMODE=true || BOOTMODE=false
@@ -511,11 +511,11 @@ fi
 # Get iYTBP apk if not found "error" out
 if [ "$UNINSTALL" = "NO" ]; then
     APK=$(ls ${INSTALLER}/${APKFILENAME} 2>/dev/null | sort | tail -n1)
-    if echo "$APK" | grep -vq apk; then
+    if echo "$APK" | grep -ivq apk; then
 	APK=$(ls /data/media/*/${SEARCHFOLDER}/${APKFILENAME} 2>/dev/null | sort | tail -n1)
-	if echo "$APK" | grep -vq apk; then
+	if echo "$APK" | grep -ivq apk; then
 	    APK=$(ls /mnt/expand/*/media/*/${SEARCHFOLDER}/${APKFILENAME} 2>/dev/null | sort | tail -n1)
-	    if echo "$APK" | grep -vq apk; then
+	    if echo "$APK" | grep -ivq apk; then
 	    apk_not_found
 	    fi
 	fi
@@ -757,8 +757,14 @@ if [ "$UNINSTALL" = "NO" ]; then
 
 	if [ "$ATTACH" = "YES" -o "$DETACH" = "YES" ]; then
 	    ui_print "- Root installer done!"
-	    ui_print "- But now going on with attach/detach module install"
-	    DOPOSTROOT=YES
+	    if [ -e $MAGIMG ]; then
+		ui_print "- But now going on with attach/detach module install"
+		DOPOSTROOT=YES
+	    else 
+		echo "Please reboot."
+		ui_print " "
+		exit 0
+	    fi
 	else
 	    ui_print "- Unmounting partition /data"
 	    umount /data 2>/dev/null
