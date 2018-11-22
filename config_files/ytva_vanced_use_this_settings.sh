@@ -23,6 +23,12 @@ SEARCHFOLDER="*ownload*"
 # possible values: YES/NO
 MAGINSTALL="NO"
 
+# Delete Data of previously installed app
+# If u want to keep the data of your currently
+# installed youtube app then set this to YES
+# possible values: YES/NO
+DELETEDATA="NO"
+
 # Detach Youtube from playstore to 
 # disable update notifications
 # NOTE: use this in combination with 

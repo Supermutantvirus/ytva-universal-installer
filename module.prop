@@ -1,8 +1,8 @@
 id=YouTube-Vanced
 name=YouTube Vanced
-version=v1.3 (created by universal installer)
-versionCode=5
+version=v1.4 (created by universal installer)
+versionCode=6
 author=Team Vanced
 description=Youtube [Ad]Vanced a modded version of YouTube with many additional features such as ad-blocking, background playback, theming and much more.
 support=https://forum.xda-developers.com/android/apps-games/app-youtube-vanced-edition-t3758757
-minMagisk=1500
+minMagisk=17000

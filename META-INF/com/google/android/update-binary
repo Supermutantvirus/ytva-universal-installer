@@ -15,15 +15,15 @@
 #                                                                                         #
 ###########################################################################################
 
-INSTALLERVER="3.0"
+INSTALLERVER="4.0"
 
 # Detect whether in boot mode
 ps | grep zygote | grep -v grep >/dev/null && BOOTMODE=true || BOOTMODE=false
 $BOOTMODE || ps -A 2>/dev/null | grep zygote | grep -v grep >/dev/null && BOOTMODE=true
 
 TMPDIR=/dev/tmp
-INSTALLER=$TMPDIR/YTVA
-MAGISKBIN=/data/adb/magisk
+INSTALLER=$TMPDIR/install
+MOUNTPATH=$TMPDIR/magisk_img
 CONFOUND=false
 
 # Default folder to search for Apk's
@@ -39,15 +39,8 @@ MAIN=$INSTALLER/hinxnz/ytva-detach-script
 SCRIPT=99-ytva-detach.sh
 ADDON=$INSTALLER/hinxnz/ytva-detach-addon
 ADDOND=/system/addon.d
-if [ -e /data/magisk.img ]; then
-    MAGIMG=/data/magisk.img
-    MAGMOD=/magisk/Youtube-Vanced-Detach
-    NEWLOC=false
-else
-    MAGIMG=/data/adb/magisk.img
-    MAGMOD=/sbin/.core/img/Youtube-Vanced-Detach
-    NEWLOC=true
-fi
+MAGIMG=/data/adb/magisk.img
+MAGMOD=/sbin/.core/img/Youtube-Vanced-Detach
 MAGSH=$MAGMOD/post-fs-data.sh
 SQLITEMP=$INSTALLER/hinxnz/sqlite
 SQLITESU=/ssu/bin/sqlite
@@ -80,7 +73,7 @@ require_new_magisk() {
     ui_print " "
     ui_print "#####################################"
     ui_print "#                                   #"
-    ui_print "#   Please install Magisk v15.0+    #"
+    ui_print "#   Please install Magisk v17.0+    #"
     ui_print "#                                   #"
     ui_print "#####################################"
     ui_print " "
@@ -142,18 +135,27 @@ deny_bootup_mode() {
     ui_print " "
     ui_print "#####################################"
     ui_print "#                                   #"
-    ui_print "#  You used a setting which has     #"
-    ui_print "#  to be executed in recovery       #"
-    ui_print "#  If that is because of the root   #"
-    ui_print "#  installer but you wanted to use  #"
-    ui_print "#  magisk mode then u can enable    #"
-    ui_print "#  it by putting the file:          #"
-    ui_print "#  ytva_install_via_magisk.plz      #"
-    ui_print "#  into your Download folder or     #"
-    ui_print "#  enable the MAGINSTALL setting    #"
-    ui_print "#  by giving it the value 'YES'     #"
-    ui_print "#  If u wanted to uninstall YTVA    #"
-    ui_print "#  u MUST always use recovery!      #"
+    ui_print "#  Due to unfixable problems with   #"
+    ui_print "#  installations with magisk        #" 
+    ui_print "#  manager on running systems       #"
+    ui_print "#  which are producing corrupt      #"
+    ui_print "#  files during the installation    #"
+    ui_print "#  this mode got disabled for       #"
+    ui_print "#  the YTVA magisk module install   #"
+    ui_print "#  setting!                         #"
+    ui_print "#                                   #"
+    ui_print "#  The installer MUST be used via   #"
+    ui_print "#  TWRP (or compatible recovery)    #"
+    ui_print "#  in that case now!                #"
+    ui_print "#                                   #"
+    ui_print "#  So please enter your recovery    #"
+    ui_print "#  and execute it there to proceed  #"
+    ui_print "#  the YTVA magisk installation     #"
+    ui_print "#                                   #"
+    ui_print "#  NOTE: U however still can use    #"
+    ui_print "#  the magisk manager to install    #"
+    ui_print "#  the detach module on a running   #"
+    ui_print "#  system!                          #"
     ui_print "#                                   #"
     ui_print "#  Exiting now!                     #"
     ui_print "#                                   #"
@@ -338,6 +340,29 @@ else
     else
         no_magisk
     fi
+fi
+
+# Check if delete data setting file is available
+DELETEDATA=$(ls /data/media/*/${SEARCHFOLDER}/ytva_delete_data.plz 2>/dev/null | sort | tail -n1)
+if echo "$DELETEDATA" | grep -vq plz; then
+    DELETEDATA=$(ls /data/media/*/ytva_delete_data.plz 2>/dev/null | sort | tail -n1)
+    if echo "$DELETEDATA" | grep -vq plz; then
+	DELETEDATA=$(ls /mnt/expand/*/media/*/${SEARCHFOLDER}/ytva_delete_data.plz 2>/dev/null | sort | tail -n1)
+	if echo "$DELETEDATA" | grep -vq plz; then
+	    DELETEDATA=$(ls /mnt/expand/*/media/*/ytva_delete_data.plz 2>/dev/null | sort | tail -n1)
+	    if echo "$DELETEDATA" | grep -vq plz; then
+	        DELETEDATA=NO
+	    else
+	        DELETEDATA=YES
+	    fi
+	else
+	    DELETEDATA=YES
+	fi
+    else
+	DELETEDATA=YES
+    fi
+else
+    DELETEDATA=YES
 fi
 
 # Check if uninstall setting file is available
@@ -617,51 +642,17 @@ fi
 # Prepare Detach script if detach settings files is in download folder
 if [ "$DETACH" = "YES" -o "$DETACHONLY" = "YES" ]; then
     ui_print "- Detach requested, preparing detach script"
-    touch $DETACHFILE
-    echo '#!/system/bin/sh' >> $DETACHFILE
-    echo '' >> $DETACHFILE
-    echo '# Detach Apps from playstore by hinxnz modified for the Youtube Vanced project' >> $DETACHFILE
-    echo '' >> $DETACHFILE
-    echo '# Playstore database and SQLite directory' >> $DETACHFILE
-    echo 'PLAY_DB_DIR=/data/data/com.android.vending/databases' >> $DETACHFILE
+    echo "" > /cache/enable_detach
     if [ -e $MAGIMG ]; then
-	if $NEWLOC; then
-	    echo 'SQLITE=/sbin/.core/img/Youtube-Vanced-Detach' >> $DETACHFILE
-	else
-	    echo 'SQLITE=/magisk/Youtube-Vanced-Detach' >> $DETACHFILE
-	fi
+	    cp $INSTALLER/hinxnz/detach-script-magisk $DETACHFILE
     else
 	ui_print "- $MAGIMG not found! Checking for $SUIMG"
 	if [ -e $SUIMG ]; then
-		echo 'SQLITE=/su/bin' >> $DETACHFILE
+		cp $INSTALLER/hinxnz/detach-script-supersu $DETACHFILE
 	else
-		echo 'SQLITE=/system/bin' >> $DETACHFILE
+		cp $INSTALLER/hinxnz/detach-script-system $DETACHFILE
 	fi
     fi
-    echo '' >> $DETACHFILE
-    echo '# Wait till boot has completed'>> $DETACHFILE
-    echo '(while [ 1 ]; do' >> $DETACHFILE
-    echo '	if [ `getprop sys.boot_completed` = 1 ]; then sleep 60' >> $DETACHFILE
-    echo '' >> $DETACHFILE
-    echo '# Disable service that populates database' >> $DETACHFILE
-    echo '      pm disable '\'com.android.vending/com.google.android.finsky.hygiene.DailyHygiene'$'DailyHygieneService\''' >> $DETACHFILE
-    echo '' >> $DETACHFILE
-    echo '# Stop playstore to make changes' >> $DETACHFILE
-    echo '      am force-stop com.android.vending' >> $DETACHFILE
-    echo '' >> $DETACHFILE
-    echo '# Change directory' >> $DETACHFILE
-    echo '      cd $SQLITE' >> $DETACHFILE
-    echo '' >> $DETACHFILE
-    echo '# Detach following apps from playstore' >> $DETACHFILE
-    echo '' >> $DETACHFILE
-    echo '  # YouTube' >> $DETACHFILE
-    echo '	./sqlite $PLAY_DB_DIR/library.db "DELETE from ownership where doc_id = '\'com.google.android.youtube\''";' >> $DETACHFILE
-    echo '	./sqlite $PLAY_DB_DIR/localappstate.db "DELETE from appstate where package_name = '\'com.google.android.youtube\''";' >> $DETACHFILE
-    echo '' >> $DETACHFILE
-    echo '# Exit' >> $DETACHFILE
-    echo '	exit; fi' >> $DETACHFILE
-    echo 'done &)' >> $DETACHFILE
-    echo '' >> $DETACHFILE
 
     # If we have Magisk available generate module later otherwise use alternatives depending on availability
     if [ -e $MAGIMG ]; then
@@ -709,9 +700,8 @@ if [ "$DETACH" = "YES" -o "$DETACHONLY" = "YES" ]; then
 		fi
 	fi
 
-	# use addon.d as last resort
 	if [ ! -e $MAGIMG ] && [ ! -e $SUIMG ] && [ -e $ADDOND ]; then
-		ui_print "- Detach script will be installed to addon.d folder"
+		ui_print "- Detach files will be preserved via addon.d folder"
 		cp -f "$ADDON" "${ADDOND}/90-ytva-detach.sh"
 		chmod 0755 "${ADDOND}/90-ytva-detach.sh"
 		if [ "$DETACHONLY" = "YES" ]; then
@@ -724,7 +714,11 @@ fi
 
 # Prepare attach script if attach setting file is in download folder this will remove and undo the detachment parts (done as above by using the available init systems)
 if [ "$ATTACH" = "YES" -o "$ATTACHONLY" = "YES" ]; then
+    if $BOOTMODE; then
+        deny_bootup_mode
+    fi
     ui_print "- Attach requested, removing detach module after next boot"
+    rm /cache/enable_detach
     if [ -e $INITD ] || [ -e $SUDS ] || [ -e $SQLITES ]; then
 	rm $INITD
 	rm $SUDS
@@ -771,7 +765,7 @@ if [ "$ATTACH" = "YES" -o "$ATTACHONLY" = "YES" ]; then
 			echo '      am startservice '\'com.android.vending/com.google.android.finsky.dailyhygiene.DailyHygiene'$'DailyHygieneService\''' >> $INITD
 			echo '      am startservice '\'com.android.vending/com.google.android.finsky.hygiene.DailyHygiene'$'DailyHygieneService\''' >> $INITD
 			echo '      mount -o rw,remount /system' >> $INITD
-			echo '      rm /system/etc/init.d/ytva-99-detach' >> $INITD
+			echo '      rm /system/etc/init.d/99-ytva-detach' >> $INITD
 			echo '  exit; fi' >> $INITD
 			echo 'done &)' >> $INITD
 			rm $SQLITES
@@ -792,7 +786,7 @@ if [ "$ATTACH" = "YES" -o "$ATTACHONLY" = "YES" ]; then
 				echo '      am startservice '\'com.android.vending/com.google.android.finsky.dailyhygiene.DailyHygiene'$'DailyHygieneService\''' >> $SUDS
 				echo '      am startservice '\'com.android.vending/com.google.android.finsky.hygiene.DailyHygiene'$'DailyHygieneService\''' >> $SUDS
 				echo '      mount -o rw,remount /system' >> $SUDS
-				echo '      rm /system/su.d/ytva-99-detach.sh' >> $SUDS
+				echo '      rm /system/su.d/99-ytva-detach.sh' >> $SUDS
 				echo '  exit; fi' >> $SUDS
 				echo 'done &)' >> $SUDS
 				rm $SQLITES
@@ -814,17 +808,17 @@ if [ "$ATTACH" = "YES" -o "$ATTACHONLY" = "YES" ]; then
     fi
 fi
 
-# Use magisk installer if magisk setting file is available (this partially works also in Magisk manager)
+# Use magisk installer if magisk setting file is available (this partially works also in Magisk manager but leads to empty files!! so disabled in bootmode now!!)
 if [ "$UNINSTALL" = "NO" ] && [ "$DETACHONLY" = "NO" ] && [ "$ATTACHONLY" = "NO" ]; then
+    if $BOOTMODE; then
+        deny_bootup_mode
+    fi
     if [ "$MAGINSTALL" = "YES" ]; then
 	ui_print "- Using Magisk installer"
 	rm -f /data/ytva-root-install
     else
 	ui_print "- Using regular Root installer"
 	DOPOSTROOT=NO
-	if $BOOTMODE; then
-	    deny_bootup_mode
-	fi
 	echo "Please keep this file! It's a flag for the YTVA universal installer." > /data/ytva-root-install
 	# YTVA installer based on arter97 youtube adaway installer modified for the YTVA project
 	ui_print "- Using $APK";
@@ -852,8 +846,10 @@ if [ "$UNINSTALL" = "NO" ] && [ "$DETACHONLY" = "NO" ] && [ "$ATTACHONLY" = "NO"
 	    rm -f /data/dalvik-cache/arm64/system@app@YouTube@YouTube.apk@classes.dex
 	    rm -f /data/dalvik-cache/arm64/system@app@YouTube@YouTube.apk@classes.vdex
 	fi
-	ui_print "- Removing YouTube app data"
-	rm -rf /data/data/com.google.android.youtube*
+	if [ "$DELETEDATA" = "YES" ]; then
+	    ui_print "- Removing YouTube app data"
+	    rm -rf /data/data/com.google.android.youtube*
+	fi
 	ui_print "- Installing libraries"
 	mkdir -p /$SYSAPPFOLDER/YouTube/tmp
 	cd /$SYSAPPFOLDER/YouTube/tmp
@@ -930,6 +926,10 @@ if [ "$MAGINSTALL" = "YES" -o "$UNINSTALL" = "YES" ]; then
         rm -f /data/dalvik-cache/arm64/system@app@YouTube@YouTube.apk@classes.dex
         rm -f /data/dalvik-cache/arm64/system@app@YouTube@YouTube.apk@classes.vdex
     fi
+    if [ "$DELETEDATA" = "YES" ]; then
+	ui_print "- Removing YouTube app data"
+	rm -rf /data/data/com.google.android.youtube*
+    fi
     rm /system/addon.d/97-ytva.sh
     rm /system/system/addon.d/97-ytva.sh
 fi
@@ -961,19 +961,21 @@ else
     mount /data 2>/dev/null
 fi
 
-# Utility functions must exist
-[ -f $MAGISKBIN/util_functions.sh ] || require_new_magisk
+# Load utility functions
+if [ -f /data/adb/magisk/util_functions.sh ]; then
+  . /data/adb/magisk/util_functions.sh
+elif [ -f /data/magisk/util_functions.sh ]; then
+  NVBASE=/data
+  . /data/magisk/util_functions.sh
+else
+  require_new_magisk
+fi
 
-# Load utility fuctions
-. $MAGISKBIN/util_functions.sh
-
-# We can't alter magisk image live, use alternative image if required
-$BOOTMODE && IMG=/data/adb/magisk_merge.img
-# Always mount under tmp
-MOUNTPATH=$TMPDIR/magisk_img
+# Use alternative image if in BOOTMODE
+$BOOTMODE && IMG=$NVBASE/magisk_merge.img
 
 # Preperation for flashable zips
-get_outfd
+setup_flashable
 
 # Mount partitions
 mount_partitions
@@ -1033,7 +1035,7 @@ if [ "$UNINSTALL" = "NO" ]; then
 	fi
 	cd ..
     fi
-    
+
     # Get the variable reqSizeM. Use your own method to determine reqSizeM if needed
     request_zip_size_check "$ZIP"
 fi
@@ -1048,19 +1050,18 @@ if [ "$UNINSTALL" = "YES" -o "$DOPOSTROOT" = "YES" ]; then
         DETACH=NO
 	ATTACH=YES
     fi
-    if $NEWLOC; then
-	if [ -e $MAGMOD ]; then
-    	    rm -r $MAGMOD
-	fi
-    else
-	if [ -e $MAGMOD ]; then
-    	    rm -r $MAGMOD
-	fi
+    if [ -e $MAGMOD ]; then
+        rm -r $MAGMOD
     fi
 fi
 
 # Generate/install YTVA detach module
 if [ "$DETACH" = "YES" -o "$DETACHONLY" = "YES" ]; then
+	if ! $BOOTMODE; then
+	    MAGMOD=$MOUNTPATH/Youtube-Vanced-Detach
+	    SQLITEM=$MAGMOD/sqlite
+	    MAGSH=$MAGMOD/post-fs-data.sh
+	fi;
 	if [ ! -e $MAGMOD ]; then
 		mkdir $MAGMOD
 	fi
@@ -1074,12 +1075,12 @@ if [ "$DETACH" = "YES" -o "$DETACHONLY" = "YES" ]; then
 	chmod 0644 $MAGMOD/module.prop
 	echo 'id=YouTube-Vanced-Detach' > $MAGMOD/module.prop
 	echo 'name=YouTube Vanced Detach' >> $MAGMOD/module.prop
-	echo 'version=v1.3 (created by universal installer)' >> $MAGMOD/module.prop
-	echo 'versionCode=5' >> $MAGMOD/module.prop
+	echo 'version=v1.4 (created by universal installer)' >> $MAGMOD/module.prop
+	echo 'versionCode=6' >> $MAGMOD/module.prop
 	echo 'author=Team Vanced' >> $MAGMOD/module.prop
 	echo 'description=Detach playstore link of Youtube Vanced app. based on original detach script v2.6 by hinxnz' >> $MAGMOD/module.prop
 	echo 'support=http://forum.xda-developers.com/android/software-hacking/mod-detach-market-links-theme-ready-apps-t3447494' >> $MAGMOD/module.prop
-	echo 'minMagisk=1500' >> $MAGMOD/module.prop
+	echo 'minMagisk=17000' >> $MAGMOD/module.prop
 	ui_print "- Detach module created, unmounting $MOUNTPATH again"
 	echo  > /data/ytva-detach-installed
 fi
@@ -1097,11 +1098,7 @@ if [ "$ATTACH" = "YES" -o "$ATTACHONLY" = "YES" ]; then
 		echo '      pm enable '\'com.android.vending/com.google.android.finsky.hygiene.DailyHygiene'$'DailyHygieneService\''' >> $MAGSH
 		echo '      am startservice '\'com.android.vending/com.google.android.finsky.dailyhygiene.DailyHygiene'$'DailyHygieneService\''' >> $MAGSH
 		echo '      am startservice '\'com.android.vending/com.google.android.finsky.hygiene.DailyHygiene'$'DailyHygieneService\''' >> $MAGSH
-		if ! $NEWLOC; then
-		    echo '      rm -r /magisk/Youtube-Vanced-Detach' >> $MAGSH
-		else
-    		    echo '      rm -r /sbin/.core/img/Youtube-Vanced-Detach' >> $MAGSH
-		fi
+		echo '      rm -r /sbin/.core/img/Youtube-Vanced-Detach' >> $MAGSH
 		echo '  exit; fi' >> $MAGSH
 		echo 'done &)' >> $MAGSH
 		ui_print "- Attach script created, unmounting $MOUNTPATH again"
