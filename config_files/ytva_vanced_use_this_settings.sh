@@ -1,5 +1,5 @@
 ########################################
-# iYTBP Universal installer setup file
+# YTVA Universal installer setup file
 ########################################
 # You can use this file to pre-setup
 # the installer. this file can be placed
@@ -11,7 +11,7 @@
 # available settings files!
 ########################################
 
-# Path where to search for iYTBP Apk's
+# Path where to search for YTVA Apk's
 # (must be a subfolder on sdcard!)
 # possible values: a valid folder/subfolder
 # on sdcard NOTE: u also can use wildcards
@@ -49,7 +49,7 @@ ATTACH="NO"
 # possible values: YES/NO
 ATTACHONLY="NO"
 
-# Completely uninstall iYTBP: root version, 
+# Completely uninstall YTVA: root version, 
 # magisk module and detach module 
 # possible values: YES/NO
 UNINSTALL="NO"

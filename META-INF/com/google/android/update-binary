@@ -1,28 +1,28 @@
 #!/sbin/sh
-##########################################################################################
-#                                                                                        #
-# iYTBP Vanced Universal Installer                                                       #
-#                                                                                        #
-##########################################################################################
-#                                                                                        #
-# Magisk Module Template install script by topjohnwu                                     #
-# merged with current iYTBP Vanced root installer by arter97 (and modified by ZaneZam)   #
-#                                                                                        #
-# Detach/Attach functions and Magisk module for them originated by hinxnz. borrowed      #
-# and kindly modified by ZaneZam for the iYTBP Vanced project. Also changed some naming  #
-# which can conflict with possible available original detach installations and removed   #
-# stuff which is not needed for this script.                                             #
-#                                                                                        #
-##########################################################################################
+###########################################################################################
+#                                                                                         #
+# Youtube Vanced Universal Installer                                                      #
+#                                                                                         #
+###########################################################################################
+#                                                                                         #
+# Magisk Module Template install script by topjohnwu                                      #
+# merged with Youtube Vanced root installer by arter97 (and modified by ZaneZam)          #
+#                                                                                         #
+# Detach/Attach functions and Magisk module for them originated by hinxnz. borrowed       #
+# and kindly modified by ZaneZam for the Youtube Vanced project. Also changed some naming #
+# which can conflict with possible available original detach installations and removed    #
+# stuff which is not needed for this script.                                              #
+#                                                                                         #
+###########################################################################################
 
-INSTALLERVER="2.8"
+INSTALLERVER="2.9"
 
 # Detect whether in boot mode
 ps | grep zygote | grep -v grep >/dev/null && BOOTMODE=true || BOOTMODE=false
 $BOOTMODE || ps -A 2>/dev/null | grep zygote | grep -v grep >/dev/null && BOOTMODE=true
 
 TMPDIR=/dev/tmp
-INSTALLER=$TMPDIR/iYTBP
+INSTALLER=$TMPDIR/YTVA
 MAGISKBIN=/data/adb/magisk
 CONFOUND=false
 
@@ -30,24 +30,24 @@ CONFOUND=false
 SEARCHFOLDER="*ownload*"
 
 # Name of the Apk
-APKFILENAME="iYTBP-*-vanced.apk"
-APKFILENAMEOLD="Youtube_*-vanced-*backgroundplayback.apk"
+APKFILENAME="Youtube_*-vanced.apk"
+APKFILENAMEOLD="iYTBP-*-vanced.apk"
 
 # Vars for Detach script/module generation
-DETACHFILE=$INSTALLER/hinxnz/iYTBP-detach
-MAIN=$INSTALLER/hinxnz/iYTBP-detach-script
-SCRIPT=99-iYTBP-detach.sh
-ADDON=$INSTALLER/hinxnz/iYTBP-detach-addon
+DETACHFILE=$INSTALLER/hinxnz/ytva-detach
+MAIN=$INSTALLER/hinxnz/ytva-detach-script
+SCRIPT=99-ytva-detach.sh
+ADDON=$INSTALLER/hinxnz/ytva-detach-addon
 ADDOND=/system/addon.d
 MAGIMG=/data/magisk.img
-MAGMOD=/magisk/iYTBP-Detach
+MAGMOD=/magisk/Youtube-Vanced-Detach
 MAGSH=$MAGMOD/post-fs-data.sh
 SQLITEMP=$INSTALLER/hinxnz/sqlite
 SQLITESU=/ssu/bin/sqlite
 SQLITES=/system/bin/sqlite
 SQLITEM=$MAGMOD/sqlite
 INIT=/system/etc/init.d
-INITD=$INIT/99-iYTBP-detach
+INITD=$INIT/99-ytva-detach
 SUD=/system/su.d
 SUDS=$SUD/$SCRIPT
 SSUD=/ssu/su.d
@@ -84,8 +84,8 @@ apk_not_found() {
     ui_print " "
     ui_print "#####################################"
     ui_print "#                                   #"
-    ui_print "#   No iYTBP Vanced Apk found!      #"
-    ui_print "#   Please put the iYTBP Apk        #"
+    ui_print "#   No Youtube Vanced Apk found!    #"
+    ui_print "#   Please put the YTVA Apk         #"
     ui_print "#   either into this installer zip  #"
     ui_print "#   or put it to the search folder  #"
     ui_print "#   you setup in config file or in  #"
@@ -141,11 +141,11 @@ deny_bootup_mode() {
     ui_print "#  installer but you wanted to use  #"
     ui_print "#  magisk mode then u can enable    #"
     ui_print "#  it by putting the file:          #"
-    ui_print "#  iYTBP_install_via_magisk.plz     #"
+    ui_print "#  ytva_install_via_magisk.plz      #"
     ui_print "#  into your Download folder or     #"
     ui_print "#  enable the MAGINSTALL setting    #"
     ui_print "#  by giving it the value 'YES'     #"
-    ui_print "#  If u wanted to uninstall iYBP    #"
+    ui_print "#  If u wanted to uninstall YTVA    #"
     ui_print "#  u MUST always use recovery!      #"
     ui_print "#                                   #"
     ui_print "#  Exiting now!                     #"
@@ -170,13 +170,13 @@ no_magisk() {
     ui_print "#  Make sure that following files   #"
     ui_print "#  are NOT present in your          #"
     ui_print "#  Downlaod folder:                 #"
-    ui_print "#  iYTBP_install_via_magisk.plz     #"
-    ui_print "#  iYTBP_detach_from_playstore.plz  #"
-    ui_print "#  iYTBP_attach_to_playstore.plz    #"
+    ui_print "#  ytva_install_via_magisk.plz      #"
+    ui_print "#  ytva_detach_from_playstore.plz   #"
+    ui_print "#  ytva_attach_to_playstore.plz     #"
     ui_print "#  and make sure that MAGINSTALL    #"
     ui_print "#  DETACH, ATTACH settings are set  #"
     ui_print "#  to 'NO' in                       #"
-    ui_print "#  iYTBP_use_this_settings.sh       #"
+    ui_print "#  ytva_use_this_settings.sh        #"
     ui_print "#  file and try again!              #"
     ui_print "#                                   #"
     ui_print "#  Exiting now!                     #"
@@ -195,17 +195,17 @@ OUTFD=$2
 ZIP=$3
 
 ui_print " "
-ui_print ">>> iYTBP Vanced universal installer v${INSTALLERVER} <<<";
+ui_print ">>> Youtube Vanced universal installer v${INSTALLERVER} <<<";
 ui_print " "
 
 # Check if detach setting file is available
-DETACH=$(ls /data/media/*/${SEARCHFOLDER}/iYTBP_detach_from_playstore.plz 2>/dev/null | sort | tail -n1)
+DETACH=$(ls /data/media/*/${SEARCHFOLDER}/ytva_detach_from_playstore.plz 2>/dev/null | sort | tail -n1)
 if echo "$DETACH" | grep -vq plz; then
-    DETACH=$(ls /data/media/*/iYTBP_detach_from_playstore.plz 2>/dev/null | sort | tail -n1)
+    DETACH=$(ls /data/media/*/ytva_detach_from_playstore.plz 2>/dev/null | sort | tail -n1)
     if echo "$DETACH" | grep -vq plz; then
-	DETACH=$(ls /mnt/expand/*/media/*/${SEARCHFOLDER}/iYTBP_detach_from_playstore.plz 2>/dev/null | sort | tail -n1)
+	DETACH=$(ls /mnt/expand/*/media/*/${SEARCHFOLDER}/ytva_detach_from_playstore.plz 2>/dev/null | sort | tail -n1)
 	if echo "$DETACH" | grep -vq plz; then
-	    DETACH=$(ls /mnt/expand/*/media/*/iYTBP_detach_from_playstore.plz 2>/dev/null | sort | tail -n1)
+	    DETACH=$(ls /mnt/expand/*/media/*/ytva_detach_from_playstore.plz 2>/dev/null | sort | tail -n1)
 	    if echo "$DETACH" | grep -vq plz; then
 	        DETACH=NO
 	    else
@@ -222,13 +222,13 @@ else
 fi
 
 # Check if detach only setting file is available
-DETACHONLY=$(ls /data/media/*/${SEARCHFOLDER}/iYTBP_only_detach_from_playstore.plz 2>/dev/null | sort | tail -n1)
+DETACHONLY=$(ls /data/media/*/${SEARCHFOLDER}/ytva_only_detach_from_playstore.plz 2>/dev/null | sort | tail -n1)
 if echo "$DETACHONLY" | grep -vq plz; then
-    DETACHONLY=$(ls /data/media/*/iYTBP_only_detach_from_playstore.plz 2>/dev/null | sort | tail -n1)
+    DETACHONLY=$(ls /data/media/*/ytva_only_detach_from_playstore.plz 2>/dev/null | sort | tail -n1)
     if echo "$DETACHONLY" | grep -vq plz; then
-	DETACHONLY=$(ls /mnt/expand/*/media/*/${SEARCHFOLDER}/iYTBP_only_detach_from_playstore.plz 2>/dev/null | sort | tail -n1)
+	DETACHONLY=$(ls /mnt/expand/*/media/*/${SEARCHFOLDER}/ytva_only_detach_from_playstore.plz 2>/dev/null | sort | tail -n1)
 	if echo "$DETACHONLY" | grep -vq plz; then
-	    DETACHONLY=$(ls /mnt/expand/*/media/*/iYTBP_only_detach_from_playstore.plz 2>/dev/null | sort | tail -n1)
+	    DETACHONLY=$(ls /mnt/expand/*/media/*/ytva_only_detach_from_playstore.plz 2>/dev/null | sort | tail -n1)
 	    if echo "$DETACHONLY" | grep -vq plz; then
 	        DETACHONLY=NO
 	    else
@@ -245,13 +245,13 @@ else
 fi
 
 # Check if attach setting file is available
-ATTACH=$(ls /data/media/*/${SEARCHFOLDER}/iYTBP_attach_to_playstore.plz 2>/dev/null | sort | tail -n1)
+ATTACH=$(ls /data/media/*/${SEARCHFOLDER}/ytva_attach_to_playstore.plz 2>/dev/null | sort | tail -n1)
 if echo "$ATTACH" | grep -vq plz; then
-    ATTACH=$(ls /data/media/*/iYTBP_attach_to_playstore.plz 2>/dev/null | sort | tail -n1)
+    ATTACH=$(ls /data/media/*/ytva_attach_to_playstore.plz 2>/dev/null | sort | tail -n1)
     if echo "$ATTACH" | grep -vq plz; then
-	ATTACH=$(ls /mnt/expand/*/media/*/${SEARCHFOLDER}/iYTBP_attach_to_playstore.plz 2>/dev/null | sort | tail -n1)
+	ATTACH=$(ls /mnt/expand/*/media/*/${SEARCHFOLDER}/ytva_attach_to_playstore.plz 2>/dev/null | sort | tail -n1)
 	if echo "$ATTACH" | grep -vq plz; then
-	    ATTACH=$(ls /mnt/expand/*/media/*/iYTBP_attach_to_playstore.plz 2>/dev/null | sort | tail -n1)
+	    ATTACH=$(ls /mnt/expand/*/media/*/ytva_attach_to_playstore.plz 2>/dev/null | sort | tail -n1)
 	    if echo "$ATTACH" | grep -vq plz; then
 	        ATTACH=NO
 	    else
@@ -268,13 +268,13 @@ else
 fi
 
 # Check if attach only setting file is available
-ATTACHONLY=$(ls /data/media/*/${SEARCHFOLDER}/iYTBP_only_attach_to_playstore.plz 2>/dev/null | sort | tail -n1)
+ATTACHONLY=$(ls /data/media/*/${SEARCHFOLDER}/ytva_only_attach_to_playstore.plz 2>/dev/null | sort | tail -n1)
 if echo "$ATTACHONLY" | grep -vq plz; then
-    ATTAACHONLY=$(ls /data/media/*/iYTBP_only_attach_to_playstore.plz 2>/dev/null | sort | tail -n1)
+    ATTAACHONLY=$(ls /data/media/*/ytva_only_attach_to_playstore.plz 2>/dev/null | sort | tail -n1)
     if echo "$ATTACHONLY" | grep -vq plz; then
-	ATTACHONLY=$(ls /mnt/expand/*/media/*/${SEARCHFOLDER}/iYTBP_only_attach_to_playstore.plz 2>/dev/null | sort | tail -n1)
+	ATTACHONLY=$(ls /mnt/expand/*/media/*/${SEARCHFOLDER}/ytva_only_attach_to_playstore.plz 2>/dev/null | sort | tail -n1)
 	if echo "$ATTACHONLY" | grep -vq plz; then
-	    ATTAACHONLY=$(ls /mnt/expand/*/media/*/iYTBP_only_attach_to_playstore.plz 2>/dev/null | sort | tail -n1)
+	    ATTAACHONLY=$(ls /mnt/expand/*/media/*/ytva_only_attach_to_playstore.plz 2>/dev/null | sort | tail -n1)
 	    if echo "$ATTACHONLY" | grep -vq plz; then
 	        ATTACHONLY=NO
 	    else
@@ -291,13 +291,13 @@ else
 fi
 
 # Check if magisk mode setting file is available
-MAGINSTALL=$(ls /data/media/*/${SEARCHFOLDER}/iYTBP_install_via_magisk.plz 2>/dev/null | sort | tail -n1)
+MAGINSTALL=$(ls /data/media/*/${SEARCHFOLDER}/ytva_install_via_magisk.plz 2>/dev/null | sort | tail -n1)
 if echo "$MAGINSTALL" | grep -vq plz; then
-    MAGINSTALL=$(ls /data/media/*/iYTBP_install_via_magisk.plz 2>/dev/null | sort | tail -n1)
+    MAGINSTALL=$(ls /data/media/*/ytva_install_via_magisk.plz 2>/dev/null | sort | tail -n1)
     if echo "$MAGINSTALL" | grep -vq plz; then
-	MAGINSTALL=$(ls /mnt/expand/*/media/*/${SEARCHFOLDER}/iYTBP_install_via_magisk.plz 2>/dev/null | sort | tail -n1)
+	MAGINSTALL=$(ls /mnt/expand/*/media/*/${SEARCHFOLDER}/ytva_install_via_magisk.plz 2>/dev/null | sort | tail -n1)
 	if echo "$MAGINSTALL" | grep -vq plz; then
-	    MAGINSTALL=$(ls /mnt/expand/*/media/*/iYTBP_install_via_magisk.plz 2>/dev/null | sort | tail -n1)
+	    MAGINSTALL=$(ls /mnt/expand/*/media/*/ytva_install_via_magisk.plz 2>/dev/null | sort | tail -n1)
 	    if echo "$MAGINSTALL" | grep -vq plz; then
 	        MAGINSTALL=NO
 	    else
@@ -334,13 +334,13 @@ else
 fi
 
 # Check if uninstall setting file is available
-UNINSTALL=$(ls /data/media/*/${SEARCHFOLDER}/iYTBP_uninstall.plz 2>/dev/null | sort | tail -n1)
+UNINSTALL=$(ls /data/media/*/${SEARCHFOLDER}/ytva_uninstall.plz 2>/dev/null | sort | tail -n1)
 if echo "$UNINSTALL" | grep -vq plz; then
-    UNINSTALL=$(ls /data/media/*/iYTBP_uninstall.plz 2>/dev/null | sort | tail -n1)
+    UNINSTALL=$(ls /data/media/*/ytva_uninstall.plz 2>/dev/null | sort | tail -n1)
     if echo "$UNINSTALL" | grep -vq plz; then
-	UNINSTALL=$(ls /mnt/expand/*/media/*/${SEARCHFOLDER}/iYTBP_uninstall.plz 2>/dev/null | sort | tail -n1)
+	UNINSTALL=$(ls /mnt/expand/*/media/*/${SEARCHFOLDER}/ytva_uninstall.plz 2>/dev/null | sort | tail -n1)
 	if echo "$UNINSTALL" | grep -vq plz; then
-	    UNINSTALL=$(ls /mnt/expand/*/media/*/iYTBP_uninstall.plz 2>/dev/null | sort | tail -n1)
+	    UNINSTALL=$(ls /mnt/expand/*/media/*/ytva_uninstall.plz 2>/dev/null | sort | tail -n1)
 	    if echo "$UNINSTALL" | grep -vq plz; then
 	        UNINSTALL=NO
 	    else
@@ -373,13 +373,13 @@ else
 fi
 
 # Check if a config file is available on sdcard
-CONFIG=$(ls /data/media/*/iYTBP_use_this_settings.sh 2>/dev/null | sort | tail -n1)
+CONFIG=$(ls /data/media/*/ytva_use_this_settings.sh 2>/dev/null | sort | tail -n1)
 if echo "$CONFIG" | grep -q .sh; then
     ui_print "- Config file detected, reading $CONFIG"
     CONFOUND=true
     . $CONFIG
 else
-    CONFIG=$(ls /data/media/*/${SEARCHFOLDER}/iYTBP_use_this_settings.sh 2>/dev/null | sort | tail -n1)
+    CONFIG=$(ls /data/media/*/${SEARCHFOLDER}/ytva_use_this_settings.sh 2>/dev/null | sort | tail -n1)
     if echo "$CONFIG" | grep -q .sh; then
         ui_print "- Config file detected, reading $CONFIG."
 	CONFOUND=true
@@ -389,13 +389,13 @@ fi
 
 # Check if a config file is available on adopted sdcard storage
 if ! $CONFOUND; then
-    CONFIG=$(ls /mnt/expand/*/media/*/iYTBP_use_this_settings.sh 2>/dev/null | sort | tail -n1)
+    CONFIG=$(ls /mnt/expand/*/media/*/ytva_use_this_settings.sh 2>/dev/null | sort | tail -n1)
     if echo "$CONFIG" | grep -q .sh; then
 	ui_print "- Config file detected, reading $CONFIG"
 	CONFOUND=true
 	. $CONFIG
     else
-	CONFIG=$(ls /mnt/expand/*/media/*/${SEARCHFOLDER}/iYTBP_use_this_settings.sh 2>/dev/null | sort | tail -n1)
+	CONFIG=$(ls /mnt/expand/*/media/*/${SEARCHFOLDER}/ytva_use_this_settings.sh 2>/dev/null | sort | tail -n1)
 	if echo "$CONFIG" | grep -q .sh; then
 	    ui_print "- Config file detected, reading $CONFIG."
 	    CONFOUND=true
@@ -412,99 +412,99 @@ fi
 if [ "$UNINSTALL" = "YES" ]; then
     if ! $BOOTMODE; then
 	ui_print "- Uninstall requested, removing settings files"
-	DETACH=$(ls /data/media/*/iYTBP_detach_from_playstore.plz 2>/dev/null | sort | tail -n1)
+	DETACH=$(ls /data/media/*/ytva_detach_from_playstore.plz 2>/dev/null | sort | tail -n1)
 	if echo "$DETACH" | grep -q plz; then
 	    rm -f $DETACH
 	fi
-	ATTACH=$(ls /data/media/*/iYTBP_attach_to_playstore.plz 2>/dev/null | sort | tail -n1)
+	ATTACH=$(ls /data/media/*/ytva_attach_to_playstore.plz 2>/dev/null | sort | tail -n1)
 	if echo "$ATTACH" | grep -q plz; then
 	    rm -f $ATTACH
 	fi
-	MAGINSTALL=$(ls /data/media/*/iYTBP_install_via_magisk.plz 2>/dev/null | sort | tail -n1)
+	MAGINSTALL=$(ls /data/media/*/ytva_install_via_magisk.plz 2>/dev/null | sort | tail -n1)
 	if echo "$MAGINSTALL" | grep -q plz; then
 	    rm -f $MAGINSTALL
 	fi
-	UNINSTALL=$(ls /data/media/*/iYTBP_uninstall.plz 2>/dev/null | sort | tail -n1)
+	UNINSTALL=$(ls /data/media/*/ytva_uninstall.plz 2>/dev/null | sort | tail -n1)
 	if echo "$UNINSTALL" | grep -q plz; then
 	    rm -f $UNINSTALL
 	fi
-	DETACH=$(ls /data/media/*/${SEARCHFOLDER}/iYTBP_detach_from_playstore.plz 2>/dev/null | sort | tail -n1)
+	DETACH=$(ls /data/media/*/${SEARCHFOLDER}/ytva_detach_from_playstore.plz 2>/dev/null | sort | tail -n1)
 	if echo "$DETACH" | grep -q plz; then
 	    rm -f $DETACH
 	fi
-	ATTACH=$(ls /data/media/*/${SEARCHFOLDER}/iYTBP_attach_to_playstore.plz 2>/dev/null | sort | tail -n1)
+	ATTACH=$(ls /data/media/*/${SEARCHFOLDER}/ytva_attach_to_playstore.plz 2>/dev/null | sort | tail -n1)
 	if echo "$ATTACH" | grep -q plz; then
 	    rm -f $ATTACH
 	fi
-	MAGINSTALL=$(ls /data/media/*/${SEARCHFOLDER}/iYTBP_install_via_magisk.plz 2>/dev/null | sort | tail -n1)
+	MAGINSTALL=$(ls /data/media/*/${SEARCHFOLDER}/ytva_install_via_magisk.plz 2>/dev/null | sort | tail -n1)
 	if echo "$MAGINSTALL" | grep -q plz; then
 	    rm -f $MAGINSTALL
 	fi
-	UNINSTALL=$(ls /data/media/*/${SEARCHFOLDER}/iYTBP_uninstall.plz 2>/dev/null | sort | tail -n1)
+	UNINSTALL=$(ls /data/media/*/${SEARCHFOLDER}/ytva_uninstall.plz 2>/dev/null | sort | tail -n1)
 	if echo "$UNINSTALL" | grep -q plz; then
 	    rm -f $UNINSTALL
 	fi
-	DETACH=$(ls /storage/emulated/*/iYTBP_detach_from_playstore.plz 2>/dev/null | sort | tail -n1)
+	DETACH=$(ls /storage/emulated/*/ytva_detach_from_playstore.plz 2>/dev/null | sort | tail -n1)
 	if echo "$DETACH" | grep -q plz; then
 	    rm -f $DETACH
 	fi
-	ATTACH=$(ls /mnt/expand/*/media/*/iYTBP_attach_to_playstore.plz 2>/dev/null | sort | tail -n1)
+	ATTACH=$(ls /mnt/expand/*/media/*/ytva_attach_to_playstore.plz 2>/dev/null | sort | tail -n1)
 	if echo "$ATTACH" | grep -q plz; then
 	    rm -f $ATTACH
 	fi
-	MAGINSTALL=$(ls /mnt/expand/*/media/*/iYTBP_install_via_magisk.plz 2>/dev/null | sort | tail -n1)
+	MAGINSTALL=$(ls /mnt/expand/*/media/*/ytva_install_via_magisk.plz 2>/dev/null | sort | tail -n1)
 	if echo "$MAGINSTALL" | grep -q plz; then
 	    rm -f $MAGINSTALL
 	fi
-	UNINSTALL=$(ls /mnt/expand/*/media/*/iYTBP_uninstall.plz 2>/dev/null | sort | tail -n1)
+	UNINSTALL=$(ls /mnt/expand/*/media/*/ytva_uninstall.plz 2>/dev/null | sort | tail -n1)
 	if echo "$UNINSTALL" | grep -q plz; then
 	    rm -f $UNINSTALL
 	fi
-	DETACH=$(ls /mnt/expand/*/media/*/${SEARCHFOLDER}/iYTBP_detach_from_playstore.plz 2>/dev/null | sort | tail -n1)
+	DETACH=$(ls /mnt/expand/*/media/*/${SEARCHFOLDER}/ytva_detach_from_playstore.plz 2>/dev/null | sort | tail -n1)
 	if echo "$DETACH" | grep -q plz; then
 	    rm -f $DETACH
 	fi
-	ATTACH=$(ls /mnt/expand/*/media/*/${SEARCHFOLDER}/iYTBP_attach_to_playstore.plz 2>/dev/null | sort | tail -n1)
+	ATTACH=$(ls /mnt/expand/*/media/*/${SEARCHFOLDER}/ytva_attach_to_playstore.plz 2>/dev/null | sort | tail -n1)
 	if echo "$ATTACH" | grep -q plz; then
 	    rm -f $ATTACH
 	fi
-	MAGINSTALL=$(ls /mnt/expand/*/media/*/${SEARCHFOLDER}/iYTBP_install_via_magisk.plz 2>/dev/null | sort | tail -n1)
+	MAGINSTALL=$(ls /mnt/expand/*/media/*/${SEARCHFOLDER}/ytva_install_via_magisk.plz 2>/dev/null | sort | tail -n1)
 	if echo "$MAGINSTALL" | grep -q plz; then
 	    rm -f $MAGINSTALL
 	fi
-	UNINSTALL=$(ls /mnt/expand/*/media/*/${SEARCHFOLDER}/iYTBP_uninstall.plz 2>/dev/null | sort | tail -n1)
+	UNINSTALL=$(ls /mnt/expand/*/media/*/${SEARCHFOLDER}/ytva_uninstall.plz 2>/dev/null | sort | tail -n1)
 	if echo "$UNINSTALL" | grep -q plz; then
 	    rm -f $UNINSTALL
 	fi
-	DETACHONLY=$(ls /data/media/*/iYTBP_only_detach_from_playstore.plz 2>/dev/null | sort | tail -n1)
+	DETACHONLY=$(ls /data/media/*/ytva_only_detach_from_playstore.plz 2>/dev/null | sort | tail -n1)
 	if echo "$DETACHONLY" | grep -q plz; then
 	    rm -f $DETACHONLY
 	fi
-	ATTACHONLY=$(ls /data/media/*/iYTBP_only_attach_to_playstore.plz 2>/dev/null | sort | tail -n1)
+	ATTACHONLY=$(ls /data/media/*/ytva_only_attach_to_playstore.plz 2>/dev/null | sort | tail -n1)
 	if echo "$ATTACHONLY" | grep -q plz; then
 	    rm -f $ATTACHONLY
 	fi
-	DETACHONLY=$(ls /data/media/*/${SEARCHFOLDER}/iYTBP_only_detach_from_playstore.plz 2>/dev/null | sort | tail -n1)
+	DETACHONLY=$(ls /data/media/*/${SEARCHFOLDER}/ytva_only_detach_from_playstore.plz 2>/dev/null | sort | tail -n1)
 	if echo "$DETACHONLY=" | grep -q plz; then
 	    rm -f $DETACHONLY
 	fi
-	ATTACHONLY=$(ls /data/media/*/${SEARCHFOLDER}/iYTBP_only_attach_to_playstore.plz 2>/dev/null | sort | tail -n1)
+	ATTACHONLY=$(ls /data/media/*/${SEARCHFOLDER}/ytva_only_attach_to_playstore.plz 2>/dev/null | sort | tail -n1)
 	if echo "$ATTACHONLY" | grep -q plz; then
 	    rm -f $ATTACHONLY
 	fi
-	DETACHONLY=$(ls /storage/emulated/*/iYTBP_only_detach_from_playstore.plz 2>/dev/null | sort | tail -n1)
+	DETACHONLY=$(ls /storage/emulated/*/ytva_only_detach_from_playstore.plz 2>/dev/null | sort | tail -n1)
 	if echo "$DETACHONLY" | grep -q plz; then
 	    rm -f $DETACHONLY
 	fi
-	ATTACHONLY=$(ls /mnt/expand/*/media/*/iYTBP_only_attach_to_playstore.plz 2>/dev/null | sort | tail -n1)
+	ATTACHONLY=$(ls /mnt/expand/*/media/*/ytva_only_attach_to_playstore.plz 2>/dev/null | sort | tail -n1)
 	if echo "$ATTACHONLY" | grep -q plz; then
 	    rm -f $ATTACHONLY
 	fi
-	DETACHONLY=$(ls /mnt/expand/*/media/*/${SEARCHFOLDER}/iYTBP_only_detach_from_playstore.plz 2>/dev/null | sort | tail -n1)
+	DETACHONLY=$(ls /mnt/expand/*/media/*/${SEARCHFOLDER}/ytva_only_detach_from_playstore.plz 2>/dev/null | sort | tail -n1)
 	if echo "$DETACHONLY" | grep -q plz; then
 	    rm -f $DETACHONLY
 	fi
-	ATTACHONLY=$(ls /mnt/expand/*/media/*/${SEARCHFOLDER}/iYTBP_only_attach_to_playstore.plz 2>/dev/null | sort | tail -n1)
+	ATTACHONLY=$(ls /mnt/expand/*/media/*/${SEARCHFOLDER}/ytva_only_attach_to_playstore.plz 2>/dev/null | sort | tail -n1)
 	if echo "$ATTACHONLY" | grep -q plz; then
 	    rm -f $ATTACHONLY
 	fi
@@ -513,7 +513,7 @@ if [ "$UNINSTALL" = "YES" ]; then
 	UNINSTALL=YES
 	MAGINSTALL=NO
 	DETACH=NO
-	if [ -e /data/iytbp-detach-installed ]; then
+	if [ -e /data/ytva-detach-installed ]; then
 	    ATTACH=YES
 	else
 	    ATTACH=NO
@@ -581,7 +581,7 @@ else
     exit 1
 fi
 
-# Get iYTBP apk with new and old filename, if not found "error" out
+# Get YTVA apk with new and old filename, if not found "error" out
 if [ "$UNINSTALL" = "NO" ]; then
     APK=$(ls ${INSTALLER}/${APKFILENAME} 2>/dev/null | sort | tail -n1)
     if echo "$APK" | grep -ivq apk; then
@@ -612,12 +612,12 @@ if [ "$DETACH" = "YES" -o "$DETACHONLY" = "YES" ]; then
     touch $DETACHFILE
     echo '#!/system/bin/sh' >> $DETACHFILE
     echo '' >> $DETACHFILE
-    echo '# Detach Apps from playstore by hinxnz modified for the iYTBP Vanced project' >> $DETACHFILE
+    echo '# Detach Apps from playstore by hinxnz modified for the Youtube Vanced project' >> $DETACHFILE
     echo '' >> $DETACHFILE
     echo '# Playstore database and SQLite directory' >> $DETACHFILE
     echo 'PLAY_DB_DIR=/data/data/com.android.vending/databases' >> $DETACHFILE
     if [ -e $MAGIMG ]; then
-	echo 'SQLITE=/magisk/iYTBP-Detach' >> $DETACHFILE
+	echo 'SQLITE=/magisk/Youtube-Vanced-Detach' >> $DETACHFILE
     else
 	ui_print "- $MAGIMG not found! Checking for $SUIMG"
 	if [ -e $SUIMG ]; then
@@ -670,7 +670,7 @@ if [ "$DETACH" = "YES" -o "$DETACHONLY" = "YES" ]; then
 		chmod 0755 "$SSUDS"
 		ui_print "- Module created, unmounting /ssu again"
 		umount /ssu 2>/dev/null
-		echo "Please keep this file! It's a flag for the iYTBP universal installer." > /data/iytbp-detach-installed
+		echo "Please keep this file! It's a flag for the YTVA universal installer." > /data/ytva-detach-installed
 		if [ "$DETACHONLY" = "YES" ]; then
 		    ui_print "done! Please reboot."
 		    exit 0
@@ -700,8 +700,8 @@ if [ "$DETACH" = "YES" -o "$DETACHONLY" = "YES" ]; then
 	# use addon.d as last resort
 	if [ ! -e $MAGIMG ] && [ ! -e $SUIMG ] && [ -e $ADDOND ]; then
 		ui_print "- Detach script will be installed to addon.d folder"
-		cp -f "$ADDON" "${ADDOND}/90-iYTBP-detach.sh"
-		chmod 0755 "${ADDOND}/90-iYTBP-detach.sh"
+		cp -f "$ADDON" "${ADDOND}/90-ytva-detach.sh"
+		chmod 0755 "${ADDOND}/90-ytva-detach.sh"
 		if [ "$DETACHONLY" = "YES" ]; then
 		    ui_print "done! Please reboot."
 		    exit 0
@@ -717,7 +717,7 @@ if [ "$ATTACH" = "YES" -o "$ATTACHONLY" = "YES" ]; then
 	rm $INITD
 	rm $SUDS
 	rm $SQLITES
-	rm $ADDOND/90-iYTBP-detach.sh
+	rm $ADDOND/90-ytva-detach.sh
     fi
 
     if [ -e $MAGIMG ]; then
@@ -728,7 +728,7 @@ if [ "$ATTACH" = "YES" -o "$ATTACHONLY" = "YES" ]; then
 		mkdir /ssu
 		mount -t ext4 -o rw $SUIMG /ssu
 		rm $SQLITESU
-		rm -f /data/iytbp-detach-installed
+		rm -f /data/ytva-detach-installed
 		if [ -e $SSUDS ]; then
 			echo '#!/system/bin/sh' > $SSUDS
 			echo '' >> $SSUDS
@@ -738,7 +738,7 @@ if [ "$ATTACH" = "YES" -o "$ATTACHONLY" = "YES" ]; then
 			echo '      pm enable '\'com.android.vending/com.google.android.finsky.hygiene.DailyHygiene'$'DailyHygieneService\''' >> $SSUDS
 			echo '      am startservice '\'com.android.vending/com.google.android.finsky.dailyhygiene.DailyHygiene'$'DailyHygieneService\''' >> $SSUDS
 			echo '      am startservice '\'com.android.vending/com.google.android.finsky.hygiene.DailyHygiene'$'DailyHygieneService\''' >> $SSUDS
-			echo '      rm /su/su.d/99-iYTBP-detach.sh' >> $SSUDS
+			echo '      rm /su/su.d/99-ytva-detach.sh' >> $SSUDS
 			echo '  exit; fi' >> $SSUDS
 			echo 'done &)' >> $SSUDS
 		fi
@@ -759,11 +759,11 @@ if [ "$ATTACH" = "YES" -o "$ATTACHONLY" = "YES" ]; then
 			echo '      am startservice '\'com.android.vending/com.google.android.finsky.dailyhygiene.DailyHygiene'$'DailyHygieneService\''' >> $INITD
 			echo '      am startservice '\'com.android.vending/com.google.android.finsky.hygiene.DailyHygiene'$'DailyHygieneService\''' >> $INITD
 			echo '      mount -o rw,remount /system' >> $INITD
-			echo '      rm /system/etc/init.d/iYTBP-99-detach' >> $INITD
+			echo '      rm /system/etc/init.d/ytva-99-detach' >> $INITD
 			echo '  exit; fi' >> $INITD
 			echo 'done &)' >> $INITD
 			rm $SQLITES
-			rm -f /data/iytbp-detach-installed
+			rm -f /data/ytva-detach-installed
 			if [ "$ATTACHONLY" = "YES" ]; then
 			    ui_print "done! Please reboot."
 			    exit 0
@@ -780,20 +780,20 @@ if [ "$ATTACH" = "YES" -o "$ATTACHONLY" = "YES" ]; then
 				echo '      am startservice '\'com.android.vending/com.google.android.finsky.dailyhygiene.DailyHygiene'$'DailyHygieneService\''' >> $SUDS
 				echo '      am startservice '\'com.android.vending/com.google.android.finsky.hygiene.DailyHygiene'$'DailyHygieneService\''' >> $SUDS
 				echo '      mount -o rw,remount /system' >> $SUDS
-				echo '      rm /system/su.d/iYTBP-99-detach.sh' >> $SUDS
+				echo '      rm /system/su.d/ytva-99-detach.sh' >> $SUDS
 				echo '  exit; fi' >> $SUDS
 				echo 'done &)' >> $SUDS
 				rm $SQLITES
-				rm -f /data/iytbp-detach-installed
+				rm -f /data/ytva-detach-installed
 				if [ "$ATTACHONLY" = "YES" ]; then
 				    ui_print "done! Please reboot."
 				    exit 0
 				fi
 			fi
 		fi
-		rm $ADDOND/90-iYTBP-detach.sh
+		rm $ADDOND/90-ytva-detach.sh
 		rm $SQLITES
-		rm -f /data/iytbp-detach-installed
+		rm -f /data/ytva-detach-installed
 		if [ "$ATTACHONLY" = "YES" ]; then
 		    ui_print "done! Please reboot."
 		    exit 0
@@ -806,15 +806,15 @@ fi
 if [ "$UNINSTALL" = "NO" ] && [ "$DETACHONLY" = "NO" ] && [ "$ATTACHONLY" = "NO" ]; then
     if [ "$MAGINSTALL" = "YES" ]; then
 	ui_print "- Using Magisk installer"
-	rm -f /data/iytbp-root-install
+	rm -f /data/ytva-root-install
     else
 	ui_print "- Using regular Root installer"
 	DOPOSTROOT=NO
 	if $BOOTMODE; then
 	    deny_bootup_mode
 	fi
-	echo "Please keep this file! It's a flag for the iYTBP universal installer." > /data/iytbp-root-install
-	# iYTBP installer based on arter97 youtube adaway installer modified for the iYTBP project
+	echo "Please keep this file! It's a flag for the YTVA universal installer." > /data/ytva-root-install
+	# YTVA installer based on arter97 youtube adaway installer modified for the YTVA project
 	ui_print "- Using $APK";
 	ui_print "- Removing previous versions (incl. magisk module)"
 	if [ -e $MAGIMG ]; then
@@ -871,8 +871,8 @@ if [ "$UNINSTALL" = "NO" ] && [ "$DETACHONLY" = "NO" ] && [ "$ATTACHONLY" = "NO"
 	    ui_print "- Installing addon.d script"
 	    # remove old script if available
 	    rm -rf $SYSADDFOLDER/97-yt.sh
-	    cp -af $INSTALLER/common/97-iYTBP.sh $SYSADDFOLDER/97-iYTBP.sh
-	    chmod 755 $SYSADDFOLDER/97-iYTBP.sh
+	    cp -af $INSTALLER/common/97-ytva.sh $SYSADDFOLDER/97-ytva.sh
+	    chmod 755 $SYSADDFOLDER/97-ytva.sh
 	fi
 
 	if [ "$ATTACH" = "YES" -o "$DETACH" = "YES" ]; then
@@ -890,7 +890,7 @@ if [ "$UNINSTALL" = "NO" ] && [ "$DETACHONLY" = "NO" ] && [ "$ATTACHONLY" = "NO"
 	    umount /data 2>/dev/null
 	    ui_print "- Unmounting partition /system"
 	    umount /system 2>/dev/null
-	    rm -rf /tmp/iYTBP
+	    rm -rf /tmp/YTVA
 	    sync
 	    ui_print "Root installer done! Please reboot."
 	    ui_print " "
@@ -918,8 +918,8 @@ if [ "$MAGINSTALL" = "YES" -o "$UNINSTALL" = "YES" ]; then
         rm -f /data/dalvik-cache/arm64/system@app@YouTube@YouTube.apk@classes.dex
         rm -f /data/dalvik-cache/arm64/system@app@YouTube@YouTube.apk@classes.vdex
     fi
-    rm /system/addon.d/97-iYTBP.sh
-    rm /system/system/addon.d/97-iYTBP.sh
+    rm /system/addon.d/97-ytva.sh
+    rm /system/system/addon.d/97-ytva.sh
 fi
 
 # Unmount /system again
@@ -930,19 +930,19 @@ fi
 
 # exit here if we uninstall and no magisk is used but go on if we need to attach
 if [ "$DOPOSTROOT" = "" ] && [ "$ATTACH" = "NO" ]; then
-    if [ -e /data/iytbp-root-install -a "$UNINSTALL" = "YES" ]; then
-	rm -f /data/iytbp-root-install
+    if [ -e /data/ytva-root-install -a "$UNINSTALL" = "YES" ]; then
+	rm -f /data/ytva-root-install
 	ui_print "- Unmounting partition /data"
 	umount /data 2>/dev/null
 	ui_print "- Uninstallation done. Please reboot!"
 	ui_print " "
 	exit 0
     fi
-elif [ -e /data/iytbp-root-install -a "$UNINSTALL" = "YES" ]; then
-    rm -f /data/iytbp-root-install
+elif [ -e /data/ytva-root-install -a "$UNINSTALL" = "YES" ]; then
+    rm -f /data/ytva-root-install
 fi
 
-# Here comes the Magisk module installation part by topjohnwu modified for the iYTBP project
+# Here comes the Magisk module installation part by topjohnwu modified for the YTVA project
 if mount | grep -q /data; then
     ui_print "- /data already mounted"
 else
@@ -999,7 +999,7 @@ if [ "$UNINSTALL" = "NO" ]; then
     ui_print "**********************************"
 fi
 
-# iYTBP Magisk installer mode
+# YTVA Magisk installer mode
 if [ "$UNINSTALL" = "NO" ]; then
     if [ "$MAGINSTALL" = "YES" ]; then
 	ui_print "- Using $APK"
@@ -1029,19 +1029,19 @@ fi
 # This function will mount $IMG to $MOUNTPATH, and resize the image based on $reqSizeM
 mount_magisk_img
 
-# Uninstall iYTBP modules if requested
+# Uninstall YTVA modules if requested
 if [ "$UNINSTALL" = "YES" -o "$DOPOSTROOT" = "YES" ]; then
-    ui_print "- Removing iYTBP modules"
+    ui_print "- Removing YTVA modules"
     if [ -e $MAGMOD -a "$UNINSTALL" = "YES" ]; then
         DETACH=NO
 	ATTACH=YES
     fi
-    if [ -e /magisk/iYTBP-Vanced ]; then
-        rm -r /magisk/iYTBP-Vanced
+    if [ -e /magisk/ytva-Vanced ]; then
+        rm -r /magisk/ytva-Vanced
     fi
 fi
 
-# Generate/install iYTBP detach module
+# Generate/install YTVA detach module
 if [ "$DETACH" = "YES" -o "$DETACHONLY" = "YES" ]; then
 	if [ ! -e $MAGMOD ]; then
 		mkdir $MAGMOD
@@ -1054,22 +1054,22 @@ if [ "$DETACH" = "YES" -o "$DETACHONLY" = "YES" ]; then
 	chmod 0755 $MAGSH
 	touch $MAGMOD/module.prop
 	chmod 0644 $MAGMOD/module.prop
-	echo 'id=iYTBP-Detach' > $MAGMOD/module.prop
-	echo 'name=iYTBP-Detach' >> $MAGMOD/module.prop
-	echo 'version=v1.2 (created by iYTBP universal installer)' >> $MAGMOD/module.prop
-	echo 'versionCode=4' >> $MAGMOD/module.prop
-	echo 'author=hinxnz (modified by ZaneZam)' >> $MAGMOD/module.prop
-	echo 'description=Detach playstore link of iYTBP Vanced app. based on original detach script v2.6 by hinxnz' >> $MAGMOD/module.prop
+	echo 'id=YouTube-Vanced-Detach' > $MAGMOD/module.prop
+	echo 'name=YouTube Vanced Detach' >> $MAGMOD/module.prop
+	echo 'version=v1.3 (created by universal installer)' >> $MAGMOD/module.prop
+	echo 'versionCode=5' >> $MAGMOD/module.prop
+	echo 'author=Team Vanced' >> $MAGMOD/module.prop
+	echo 'description=Detach playstore link of Youtube Vanced app. based on original detach script v2.6 by hinxnz' >> $MAGMOD/module.prop
 	echo 'support=http://forum.xda-developers.com/android/software-hacking/mod-detach-market-links-theme-ready-apps-t3447494' >> $MAGMOD/module.prop
 	echo 'minMagisk=1500' >> $MAGMOD/module.prop
 	ui_print "- Detach module created, unmounting $MOUNTPATH again"
-	echo  > /data/iytbp-detach-installed
+	echo  > /data/ytva-detach-installed
 fi
 
-# Generate/install iYTBP attach script
+# Generate/install YTVA attach script
 if [ "$ATTACH" = "YES" -o "$ATTACHONLY" = "YES" ]; then
 	rm $SQLITEM
-	rm -f /data/iytbp-detach-installed
+	rm -f /data/ytva-detach-installed
 	if [ -e $MAGSH ]; then
 		echo '#!/system/bin/sh' > $MAGSH
 		echo '' >> $MAGSH
@@ -1079,7 +1079,7 @@ if [ "$ATTACH" = "YES" -o "$ATTACHONLY" = "YES" ]; then
 		echo '      pm enable '\'com.android.vending/com.google.android.finsky.hygiene.DailyHygiene'$'DailyHygieneService\''' >> $MAGSH
 		echo '      am startservice '\'com.android.vending/com.google.android.finsky.dailyhygiene.DailyHygiene'$'DailyHygieneService\''' >> $MAGSH
 		echo '      am startservice '\'com.android.vending/com.google.android.finsky.hygiene.DailyHygiene'$'DailyHygieneService\''' >> $MAGSH
-		echo '      rm -r /magisk/iYTBP-Detach' >> $MAGSH
+		echo '      rm -r /magisk/YTVA-Detach' >> $MAGSH
 		echo '  exit; fi' >> $MAGSH
 		echo 'done &)' >> $MAGSH
 		ui_print "- Attach script created, unmounting $MOUNTPATH again"
@@ -1094,7 +1094,7 @@ if [ "$MAGINSTALL" = "YES" ]; then
     mkdir -p $MODPATH
 
     # Copy files
-    ui_print "- Copying iYTBP Vanced module files"
+    ui_print "- Copying YTVA Vanced module files"
     mv $INSTALLER/system $MODPATH/system
 
     # Handle replace folders

@@ -40,9 +40,9 @@ LATESTARTSERVICE=false
 # Set what you want to show when installing your mod
 
 print_modname() {
-  ui_print "*************************************************"
-  ui_print "* injected YouTube Background Playback - Vanced *"
-  ui_print "*************************************************"
+  ui_print "******************"
+  ui_print "* YouTube Vanced *"
+  ui_print "******************"
 }
 
 ##########################################################################################
