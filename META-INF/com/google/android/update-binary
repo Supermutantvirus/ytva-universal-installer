@@ -15,7 +15,7 @@
 #                                                                                        #
 ##########################################################################################
 
-INSTALLERVER="2.5 beta"
+INSTALLERVER="2.6 beta"
 
 # Detect whether in boot mode
 ps | grep zygote | grep -v grep >/dev/null && BOOTMODE=true || BOOTMODE=false
@@ -37,7 +37,8 @@ CONFOUND=false
 SEARCHFOLDER="*ownload*"
 
 # Name of the Apk
-APKFILENAME="Youtube_*-vanced-*backgroundplayback.apk"
+APKFILENAME="iYTBP-*-vanced.apk"
+APKFILENAMEOLD="Youtube_*-vanced-*backgroundplayback.apk"
 
 # Vars for Detach script/module generation
 DETACHFILE=$INSTALLER/hinxnz/iYTBP-detach
@@ -508,7 +509,7 @@ else
     exit 1
 fi
 
-# Get iYTBP apk if not found "error" out
+# Get iYTBP apk with new and old filename, if not found "error" out
 if [ "$UNINSTALL" = "NO" ]; then
     APK=$(ls ${INSTALLER}/${APKFILENAME} 2>/dev/null | sort | tail -n1)
     if echo "$APK" | grep -ivq apk; then
@@ -516,7 +517,16 @@ if [ "$UNINSTALL" = "NO" ]; then
 	if echo "$APK" | grep -ivq apk; then
 	    APK=$(ls /mnt/expand/*/media/*/${SEARCHFOLDER}/${APKFILENAME} 2>/dev/null | sort | tail -n1)
 	    if echo "$APK" | grep -ivq apk; then
-	    apk_not_found
+		APK=$(ls ${INSTALLER}/${APKFILENAMEOLD} 2>/dev/null | sort | tail -n1)
+		if echo "$APK" | grep -ivq apk; then
+		    APK=$(ls /data/media/*/${SEARCHFOLDER}/${APKFILENAMEOLD} 2>/dev/null | sort | tail -n1)
+		    if echo "$APK" | grep -ivq apk; then
+		        APK=$(ls /mnt/expand/*/media/*/${SEARCHFOLDER}/${APKFILENAMEOLD} 2>/dev/null | sort | tail -n1)
+		        if echo "$APK" | grep -ivq apk; then
+			    apk_not_found
+			fi
+		    fi
+		fi
 	    fi
 	fi
     fi
@@ -783,6 +793,7 @@ fi
 # Remove previous installed YT versions
 if [ "$MAGINSTALL" = "YES" -o "$UNINSTALL" = "YES" ]; then
     ui_print "- Removing previous root version if it exists"
+    rm -rf /data/app/com.google.android.youtube*
     rm -rf /$SYSAPPFOLDER/YouTube
     rm -rf /$SYSAPPFOLDER/youtube
     rm -rf /$SYSAPPFOLDER/YouTube.apk!
@@ -927,10 +938,10 @@ if [ "$DETACH" = "YES" ]; then
 	chmod 0644 $MAGMOD/module.prop
 	echo 'id=iYTBP-Detach' > $MAGMOD/module.prop
 	echo 'name=iYTBP-Detach' >> $MAGMOD/module.prop
-	echo 'version=v1.0 based on original v2.6' >> $MAGMOD/module.prop
-	echo 'versionCode=2' >> $MAGMOD/module.prop
+	echo 'version=v1.1 (created by iYTBP universal installer)' >> $MAGMOD/module.prop
+	echo 'versionCode=3' >> $MAGMOD/module.prop
 	echo 'author=hinxnz (modified by ZaneZam)' >> $MAGMOD/module.prop
-	echo 'description=Detach playstore link for iYTBP Vanced' >> $MAGMOD/module.prop
+	echo 'description=Detach playstore link of iYTBP Vanced app. based on original detach script v2.6 by hinxnz' >> $MAGMOD/module.prop
 	echo 'support=http://forum.xda-developers.com/android/software-hacking/mod-detach-market-links-theme-ready-apps-t3447494' >> $MAGMOD/module.prop
 	echo 'template=1400' >> $MAGMOD/module.prop
 	ui_print "- Detach module created, unmounting $MOUNTPATH again"
