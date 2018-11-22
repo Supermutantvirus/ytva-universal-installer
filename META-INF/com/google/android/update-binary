@@ -15,7 +15,7 @@
 #                                                                                        #
 ##########################################################################################
 
-INSTALLERVER="2.4 beta"
+INSTALLERVER="2.5 beta"
 
 # Detect whether in boot mode
 ps | grep zygote | grep -v grep >/dev/null && BOOTMODE=true || BOOTMODE=false
@@ -190,7 +190,7 @@ no_magisk() {
     ui_print "#  and make sure that MAGINSTALL    #"
     ui_print "#  DETACH, ATTACH settings are set  #"
     ui_print "#  to 'NO' in                       #"
-    ui_print "#  iYTBP_use_this_settings.plz      #"
+    ui_print "#  iYTBP_use_this_settings.sh       #"
     ui_print "#  file and try again!              #"
     ui_print "#                                   #"
     ui_print "#  Exiting now!                     #"
@@ -559,7 +559,8 @@ if [ "$DETACH" = "YES" ]; then
     echo '# Detach following apps from playstore' >> $DETACHFILE
     echo '' >> $DETACHFILE
     echo '  # YouTube' >> $DETACHFILE
-    echo '	./sqlite $PLAY_DB_DIR/library.db "UPDATE ownership SET library_id = '\'u-wl\' where doc_id = \'com.google.android.youtube\''";' >> $DETACHFILE
+    echo '	./sqlite $PLAY_DB_DIR/library.db "DELETE from ownership where doc_id = '\'com.google.android.youtube\''";' >> $DETACHFILE
+    echo '	./sqlite $PLAY_DB_DIR/localappstate.db "DELETE from appstate where package_name = '\'com.google.android.youtube\''";' >> $DETACHFILE
     echo '' >> $DETACHFILE
     echo '# Exit' >> $DETACHFILE
     echo '	exit; fi' >> $DETACHFILE
@@ -810,7 +811,6 @@ else
     mount /data 2>/dev/null
 fi
 mount /cache 2>/dev/null
-
 
 # Utility functions must exist
 [ -f $MAGISKBIN/util_functions.sh ] || require_new_magisk
