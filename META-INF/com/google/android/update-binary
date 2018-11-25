@@ -15,7 +15,7 @@
 #                                                                                         #
 ###########################################################################################
 
-INSTALLERVER="4.0"
+INSTALLERVER="4.1"
 
 # Detect whether in boot mode
 ps | grep zygote | grep -v grep >/dev/null && BOOTMODE=true || BOOTMODE=false
@@ -25,11 +25,19 @@ TMPDIR=/dev/tmp
 INSTALLER=$TMPDIR/install
 MOUNTPATH=$TMPDIR/magisk_img
 CONFOUND=false
+ZIP="$3"
 
-# Default folder to search for Apk's
+# Handle message output different between bootup and twrp otherwise some messages are not shown
+if ! $BOOTMODE; then
+    OUTFD=/proc/self/fd/$2;
+else
+    OUTFD=$2;
+fi
+
+# Default folder to search for apk's
 SEARCHFOLDER="*ownload*"
 
-# Name of the Apk
+# Name of the apk
 APKFILENAME="Youtube_*-vanced.apk"
 APKFILENAMEOLD="iYTBP-*-vanced.apk"
 
@@ -40,7 +48,7 @@ SCRIPT=99-ytva-detach.sh
 ADDON=$INSTALLER/hinxnz/ytva-detach-addon
 ADDOND=/system/addon.d
 MAGIMG=/data/adb/magisk.img
-MAGMOD=/sbin/.core/img/Youtube-Vanced-Detach
+MAGMOD=/sbin/.core/img/YouTube-Vanced-Detach
 MAGSH=$MAGMOD/post-fs-data.sh
 SQLITEMP=$INSTALLER/hinxnz/sqlite
 SQLITESU=/ssu/bin/sqlite
@@ -54,7 +62,7 @@ SSUD=/ssu/su.d
 SSUDS=$SSUD/$SCRIPT
 SUIMG=/data/su.img
 
-# default app location
+# Default app location
 SYSAPPFOLDER=system/app
 SYSAPPFOLDERPRIV=system/priv-app
 SYSADDFOLDER=/system/addon.d
@@ -66,8 +74,17 @@ umask 022
 rm -rf $TMPDIR 2>/dev/null
 mkdir -p $INSTALLER
 
-# echo before loading util_functions
-ui_print() { echo "$1"; }
+# Echo before loading util_functions
+ui_print() {
+if ! $BOOTMODE; then
+    until [ ! "$1" ]; do
+	echo -e "ui_print $1\nui_print" > $OUTFD;
+	shift;
+    done;
+else
+    echo "$1";
+fi
+}
 
 require_new_magisk() {
     ui_print " "
@@ -84,15 +101,15 @@ apk_not_found() {
     ui_print " "
     ui_print "#####################################"
     ui_print "#                                   #"
-    ui_print "#   No Youtube Vanced Apk found!    #"
-    ui_print "#   Please put the YTVA Apk         #"
+    ui_print "#   No Youtube Vanced apk found!    #"
+    ui_print "#   Please put the YTVA apk         #"
     ui_print "#   either into this installer zip  #"
     ui_print "#   or put it to the search folder  #"
-    ui_print "#   you setup in config file or in  #"
-    ui_print "#   this script without changing    #"
-    ui_print "#   the file name and be sure that  #"
-    ui_print "#   only one file exists so that    #"
-    ui_print "#   the right one gets installed!   #"
+    ui_print "#   you did setup in config file    #"
+    ui_print "#   without changing the file name  #"
+    ui_print "#   and be sure that only one file  #"
+    ui_print "#   exists so that the desired one  #"
+    ui_print "#   gets installed!                 #"
     ui_print "#                                   #"
     ui_print "#   Currently set search folder:    #"
     ui_print "#   $SEARCHFOLDER                   #"
@@ -113,9 +130,9 @@ attach_detach_conflict() {
     ui_print " "
     ui_print "#####################################"
     ui_print "#                                   #"
-    ui_print "#  Detach AND ALSO Attach setting   #"
+    ui_print "#  Detach AND ALSO attach setting   #"
     ui_print "#  is enabled. Please enable        #"
-    ui_print "#  either Detach OR Attach setting  #"
+    ui_print "#  either detach OR attach setting  #"
     ui_print "#  not both of them at the same     #"
     ui_print "#  time!                            #"
     ui_print "#                                   #"
@@ -135,27 +152,15 @@ deny_bootup_mode() {
     ui_print " "
     ui_print "#####################################"
     ui_print "#                                   #"
-    ui_print "#  Due to unfixable problems with   #"
-    ui_print "#  installations with magisk        #" 
-    ui_print "#  manager on running systems       #"
-    ui_print "#  which are producing corrupt      #"
-    ui_print "#  files during the installation    #"
-    ui_print "#  this mode got disabled for       #"
-    ui_print "#  the YTVA magisk module install   #"
-    ui_print "#  setting!                         #"
+    ui_print "#  You are using a setting which    #"
+    ui_print "#  can't be used in combination     #"
+    ui_print "#  with magisk manager!             #"
     ui_print "#                                   #"
     ui_print "#  The installer MUST be used via   #"
     ui_print "#  TWRP (or compatible recovery)    #"
-    ui_print "#  in that case now!                #"
-    ui_print "#                                   #"
-    ui_print "#  So please enter your recovery    #"
-    ui_print "#  and execute it there to proceed  #"
-    ui_print "#  the YTVA magisk installation     #"
-    ui_print "#                                   #"
-    ui_print "#  NOTE: U however still can use    #"
-    ui_print "#  the magisk manager to install    #"
-    ui_print "#  the detach module on a running   #"
-    ui_print "#  system!                          #"
+    ui_print "#  in that case now! So please      #"
+    ui_print "#  enter your recovery and execute  #"
+    ui_print "#  it there                         #"
     ui_print "#                                   #"
     ui_print "#  Exiting now!                     #"
     ui_print "#                                   #"
@@ -176,17 +181,19 @@ no_magisk() {
     ui_print "#  No Magisk installation found!    #"
     ui_print "#  However u still can use the      #"
     ui_print "#  root installer function          #"
-    ui_print "#  Make sure that following files   #"
-    ui_print "#  are NOT present in your          #"
-    ui_print "#  Downlaod folder:                 #"
-    ui_print "#  ytva_install_via_magisk.plz      #"
-    ui_print "#  ytva_detach_from_playstore.plz   #"
-    ui_print "#  ytva_attach_to_playstore.plz     #"
+    ui_print "#  Make sure that following '.plz'  #"
+    ui_print "#  files are NOT present in your    #"
+    ui_print "#  Download folder:                 #"
+    ui_print "#  ytva_install_via_magisk          #"
+    ui_print "#  ytva_detach_from_playstore       #"
+    ui_print "#  ytva_only_detach_to_playstore    #"
+    ui_print "#  ytva_attach_to_playstore         #"
+    ui_print "#  ytva_only_attach_to_playstore    #"
     ui_print "#  and make sure that MAGINSTALL    #"
-    ui_print "#  DETACH, ATTACH settings are set  #"
+    ui_print "#  DETACH,ATTACH settings are set   #"
     ui_print "#  to 'NO' in                       #"
     ui_print "#  ytva_use_this_settings.sh        #"
-    ui_print "#  file and try again!              #"
+    ui_print "#  file (if used) and try again!    #"
     ui_print "#                                   #"
     ui_print "#  Exiting now!                     #"
     ui_print "#                                   #"
@@ -200,14 +207,11 @@ no_magisk() {
     exit 1
 }
 
-OUTFD=$2
-ZIP=$3
-
 ui_print " "
 ui_print ">>> Youtube Vanced universal installer v${INSTALLERVER} <<<";
 ui_print " "
 
-# Check if detach setting file is available
+# Check if detach setup file is available
 DETACH=$(ls /data/media/*/${SEARCHFOLDER}/ytva_detach_from_playstore.plz 2>/dev/null | sort | tail -n1)
 if echo "$DETACH" | grep -vq plz; then
     DETACH=$(ls /data/media/*/ytva_detach_from_playstore.plz 2>/dev/null | sort | tail -n1)
@@ -230,7 +234,7 @@ else
     DETACH=YES
 fi
 
-# Check if detach only setting file is available
+# Check if detach only setup file is available
 DETACHONLY=$(ls /data/media/*/${SEARCHFOLDER}/ytva_only_detach_from_playstore.plz 2>/dev/null | sort | tail -n1)
 if echo "$DETACHONLY" | grep -vq plz; then
     DETACHONLY=$(ls /data/media/*/ytva_only_detach_from_playstore.plz 2>/dev/null | sort | tail -n1)
@@ -253,7 +257,7 @@ else
     DETACHONLY=YES
 fi
 
-# Check if attach setting file is available
+# Check if attach setup file is available
 ATTACH=$(ls /data/media/*/${SEARCHFOLDER}/ytva_attach_to_playstore.plz 2>/dev/null | sort | tail -n1)
 if echo "$ATTACH" | grep -vq plz; then
     ATTACH=$(ls /data/media/*/ytva_attach_to_playstore.plz 2>/dev/null | sort | tail -n1)
@@ -276,7 +280,7 @@ else
     ATTACH=YES
 fi
 
-# Check if attach only setting file is available
+# Check if attach only setup file is available
 ATTACHONLY=$(ls /data/media/*/${SEARCHFOLDER}/ytva_only_attach_to_playstore.plz 2>/dev/null | sort | tail -n1)
 if echo "$ATTACHONLY" | grep -vq plz; then
     ATTAACHONLY=$(ls /data/media/*/ytva_only_attach_to_playstore.plz 2>/dev/null | sort | tail -n1)
@@ -299,7 +303,7 @@ else
     ATTACHONLY=YES
 fi
 
-# Check if magisk mode setting file is available
+# Check if magisk mode setup file is available
 MAGINSTALL=$(ls /data/media/*/${SEARCHFOLDER}/ytva_install_via_magisk.plz 2>/dev/null | sort | tail -n1)
 if echo "$MAGINSTALL" | grep -vq plz; then
     MAGINSTALL=$(ls /data/media/*/ytva_install_via_magisk.plz 2>/dev/null | sort | tail -n1)
@@ -311,7 +315,7 @@ if echo "$MAGINSTALL" | grep -vq plz; then
 	        MAGINSTALL=NO
 	    else
 		if [ -e $MAGIMG ]; then
-		    ui_print "- Magisk detected! great so we can use it."
+		    ui_print "- Magisk detected, so we can use it."
 		    MAGINSTALL=YES
 		else
 		    no_magisk
@@ -319,7 +323,7 @@ if echo "$MAGINSTALL" | grep -vq plz; then
 	    fi
 	else
 	    if [ -e $MAGIMG ]; then
-	        ui_print "- Magisk detected! great so we can use it."
+		ui_print "- Magisk detected, so we can use it."
 	        MAGINSTALL=YES
 	    else
 	        no_magisk
@@ -327,7 +331,7 @@ if echo "$MAGINSTALL" | grep -vq plz; then
 	fi
     else
 	if [ -e $MAGIMG ]; then
-	    ui_print "- Magisk detected! great so we can use it."
+	    ui_print "- Magisk detected, so we can use it."
 	    MAGINSTALL=YES
 	else
 	    no_magisk
@@ -335,14 +339,14 @@ if echo "$MAGINSTALL" | grep -vq plz; then
     fi
 else
     if [ -e $MAGIMG ]; then
-        ui_print "- Magisk detected! great so we can use it."
+	ui_print "- Magisk detected, so we can use it."
         MAGINSTALL=YES
     else
         no_magisk
     fi
 fi
 
-# Check if delete data setting file is available
+# Check if delete data setup file is available
 DELETEDATA=$(ls /data/media/*/${SEARCHFOLDER}/ytva_delete_data.plz 2>/dev/null | sort | tail -n1)
 if echo "$DELETEDATA" | grep -vq plz; then
     DELETEDATA=$(ls /data/media/*/ytva_delete_data.plz 2>/dev/null | sort | tail -n1)
@@ -365,7 +369,7 @@ else
     DELETEDATA=YES
 fi
 
-# Check if uninstall setting file is available
+# Check if uninstall setup file is available
 UNINSTALL=$(ls /data/media/*/${SEARCHFOLDER}/ytva_uninstall.plz 2>/dev/null | sort | tail -n1)
 if echo "$UNINSTALL" | grep -vq plz; then
     UNINSTALL=$(ls /data/media/*/ytva_uninstall.plz 2>/dev/null | sort | tail -n1)
@@ -407,13 +411,13 @@ fi
 # Check if a config file is available on sdcard
 CONFIG=$(ls /data/media/*/ytva_use_this_settings.sh 2>/dev/null | sort | tail -n1)
 if echo "$CONFIG" | grep -q .sh; then
-    ui_print "- Config file detected, reading $CONFIG"
+    ui_print "- Settings file detected, reading $CONFIG"
     CONFOUND=true
     . $CONFIG
 else
     CONFIG=$(ls /data/media/*/${SEARCHFOLDER}/ytva_use_this_settings.sh 2>/dev/null | sort | tail -n1)
     if echo "$CONFIG" | grep -q .sh; then
-        ui_print "- Config file detected, reading $CONFIG."
+        ui_print "- Settings file detected, reading $CONFIG."
 	CONFOUND=true
         . $CONFIG
     fi
@@ -423,27 +427,28 @@ fi
 if ! $CONFOUND; then
     CONFIG=$(ls /mnt/expand/*/media/*/ytva_use_this_settings.sh 2>/dev/null | sort | tail -n1)
     if echo "$CONFIG" | grep -q .sh; then
-	ui_print "- Config file detected, reading $CONFIG"
+	ui_print "- Settings file detected, reading $CONFIG"
 	CONFOUND=true
 	. $CONFIG
     else
 	CONFIG=$(ls /mnt/expand/*/media/*/${SEARCHFOLDER}/ytva_use_this_settings.sh 2>/dev/null | sort | tail -n1)
 	if echo "$CONFIG" | grep -q .sh; then
-	    ui_print "- Config file detected, reading $CONFIG."
+	    ui_print "- Settings file detected, reading $CONFIG."
 	    CONFOUND=true
 	    . $CONFIG
 	fi
     fi
 fi
 
+# No settings file available
 if ! $CONFOUND; then
-    ui_print "- No config file available using presets"
+    ui_print "- No settings file found, using presets or setup files if available"
 fi
 
-# Special handling of all install setting if uninstall is requested + removing settings files + reseting config file
+# Special handling of all install settings if uninstall is requested + removing setup files + resetting config file
 if [ "$UNINSTALL" = "YES" ]; then
     if ! $BOOTMODE; then
-	ui_print "- Uninstall requested, removing settings files"
+	ui_print "- Uninstall requested, removing setup files"
 	DETACH=$(ls /data/media/*/ytva_detach_from_playstore.plz 2>/dev/null | sort | tail -n1)
 	if echo "$DETACH" | grep -q plz; then
 	    rm -f $DETACH
@@ -540,7 +545,6 @@ if [ "$UNINSTALL" = "YES" ]; then
 	if echo "$ATTACHONLY" | grep -q plz; then
 	    rm -f $ATTACHONLY
 	fi
-
 	# Turn on uninstallation and turn off all install settings
 	UNINSTALL=YES
 	MAGINSTALL=NO
@@ -557,11 +561,10 @@ if [ "$UNINSTALL" = "YES" ]; then
     fi
 fi
 
-# Detach/Attach both can't be
+# Detach or attach? both can't be
 if [ "$ATTACH" = "YES" ] && [ "$DETACH" = "YES" ]; then
     attach_detach_conflict
 fi
-
 if [ "$ATTACHONLY" = "YES" ] && [ "$DETACHONLY" = "YES" ]; then
     attach_detach_conflict
 fi
@@ -578,7 +581,6 @@ else
     ui_print " "
     exit 1
 fi
-
 
 # Mount /system for root mode later but not if magisk is used
 if [ "$MAGINSTALL" = "NO" ]; then
@@ -639,10 +641,9 @@ if [ "$UNINSTALL" = "NO" ]; then
     fi
 fi
 
-# Prepare Detach script if detach settings files is in download folder
+# Prepare detach script if detach setup files are in download folder
 if [ "$DETACH" = "YES" -o "$DETACHONLY" = "YES" ]; then
     ui_print "- Detach requested, preparing detach script"
-    echo "" > /cache/enable_detach
     if [ -e $MAGIMG ]; then
 	    cp $INSTALLER/hinxnz/detach-script-magisk $DETACHFILE
     else
@@ -653,170 +654,166 @@ if [ "$DETACH" = "YES" -o "$DETACHONLY" = "YES" ]; then
 		cp $INSTALLER/hinxnz/detach-script-system $DETACHFILE
 	fi
     fi
-
     # If we have Magisk available generate module later otherwise use alternatives depending on availability
     if [ -e $MAGIMG ]; then
 	ui_print "- Module $MAGMOD will be generated"
     else
 	if [ -e $SUIMG ]; then
-		ui_print "- Detach script will be installed to supersu image"
-		mkdir /ssu
-		ui_print "- Mounting $SUIMG to /ssu"
-		mount -t ext4 -o rw $SUIMG /ssu
-		if [ ! -e /ssu/su.d ]; then
-			mkdir /ssu/su.d
-		fi
-		cp -f "$SQLITEMP" "$SQLITESU"
-		chgrp 2000 "$SQLITESU"
-		chmod 0755 "$SQLITESU"
-		cp -f "$DETACHFILE" "$SSUDS"
-		chmod 0755 "$SSUDS"
-		ui_print "- Module created, unmounting /ssu again"
-		umount /ssu 2>/dev/null
-		echo "Please keep this file! It's a flag for the YTVA universal installer." > /data/ytva-detach-installed
-		if [ "$DETACHONLY" = "YES" ]; then
-		    ui_print "done! Please reboot."
-		    exit 0
-		fi
+	    ui_print "- Detach script will be installed to supersu image"
+	    mkdir /ssu
+	    ui_print "- Mounting $SUIMG to /ssu"
+	    mount -t ext4 -o rw $SUIMG /ssu
+	    if [ ! -e /ssu/su.d ]; then
+		mkdir /ssu/su.d
+	    fi
+	    cp -f "$SQLITEMP" "$SQLITESU"
+	    chgrp 2000 "$SQLITESU"
+	    chmod 0755 "$SQLITESU"
+	    cp -f "$DETACHFILE" "$SSUDS"
+	    chmod 0755 "$SSUDS"
+	    ui_print "- Module created, unmounting /ssu again"
+	    umount /ssu 2>/dev/null
+	    echo "Please keep this file! It's a flag for the YTVA universal installer." > /data/ytva-detach-installed
+	    if [ "$DETACHONLY" = "YES" ]; then
+	        ui_print "done! Please reboot."
+		exit 0
+	    fi
 	else
-		if [ -e $INIT ]; then
-			ui_print "- Detach script will be installed to init.d folder"
-			cp -f "$DETACHFILE" "$INITD"
-			chmod 0755 "$INITD"
-		else
-			ui_print "- Detach script will be installed to su.d folder"
-			if [ ! -e $SUD ]; then
-				mkdir $SUD
-			fi
-			cp -f "$DETACHFILE" "$SUDS"
-			chmod 0755 "$SUDS"
+	    if [ -e $INIT ]; then
+		ui_print "- Detach script will be installed to init.d folder"
+		cp -f "$DETACHFILE" "$INITD"
+		chmod 0755 "$INITD"
+	    else
+		ui_print "- Detach script will be installed to su.d folder"
+		if [ ! -e $SUD ]; then
+		    mkdir $SUD
 		fi
+		cp -f "$DETACHFILE" "$SUDS"
+		chmod 0755 "$SUDS"
+	    fi
 		cp -f "$SQLITEMP" "$SQLITES"
 		chgrp 2000 "$SQLITES"
 		chmod 0755 "$SQLITES"
-		if [ "$DETACHONLY" = "YES" ]; then
-		    ui_print "done! Please reboot."
-		    exit 0
-		fi
+	    if [ "$DETACHONLY" = "YES" ]; then
+	        ui_print "Done! Please reboot."
+	        exit 0
+	    fi
 	fi
-
 	if [ ! -e $MAGIMG ] && [ ! -e $SUIMG ] && [ -e $ADDOND ]; then
-		ui_print "- Detach files will be preserved via addon.d folder"
-		cp -f "$ADDON" "${ADDOND}/90-ytva-detach.sh"
-		chmod 0755 "${ADDOND}/90-ytva-detach.sh"
-		if [ "$DETACHONLY" = "YES" ]; then
-		    ui_print "done! Please reboot."
-		    exit 0
-		fi
+	    ui_print "- Detach files will be preserved via addon.d folder"
+	    cp -f "$ADDON" "${ADDOND}/90-ytva-detach.sh"
+	    chmod 0755 "${ADDOND}/90-ytva-detach.sh"
+	    if [ "$DETACHONLY" = "YES" ]; then
+	        ui_print "done! Please reboot."
+	        exit 0
+	    fi
 	fi
     fi
 fi
 
-# Prepare attach script if attach setting file is in download folder this will remove and undo the detachment parts (done as above by using the available init systems)
+# Prepare attach script if attach setup file is in download folder. this will remove and undo the detachment parts (done as above by using the available init systems)
 if [ "$ATTACH" = "YES" -o "$ATTACHONLY" = "YES" ]; then
     if $BOOTMODE; then
         deny_bootup_mode
     fi
-    ui_print "- Attach requested, removing detach module after next boot"
-    rm /cache/enable_detach
+    ui_print "- Attach requested, removing detach module 60 sec after next boot"
     if [ -e $INITD ] || [ -e $SUDS ] || [ -e $SQLITES ]; then
 	rm $INITD
 	rm $SUDS
 	rm $SQLITES
 	rm $ADDOND/90-ytva-detach.sh
     fi
-
     if [ -e $MAGIMG ]; then
 	ui_print "- Detach module will be removed from Magisk"
     else
 	if [ -e $SUIMG ]; then
-		ui_print "- Detach module will be removed from Supersu"
-		mkdir /ssu
-		mount -t ext4 -o rw $SUIMG /ssu
-		rm $SQLITESU
-		rm -f /data/ytva-detach-installed
-		if [ -e $SSUDS ]; then
-			echo '#!/system/bin/sh' > $SSUDS
-			echo '' >> $SSUDS
-			echo '(while [ 1 ]; do' >> $SSUDS
-			echo '  if [ `getprop sys.boot_completed` = 1 ]; then sleep 60' >> $SSUDS
-			echo '      pm enable '\'com.android.vending/com.google.android.finsky.dailyhygiene.DailyHygiene'$'DailyHygieneService\''' >> $SSUDS
-			echo '      pm enable '\'com.android.vending/com.google.android.finsky.hygiene.DailyHygiene'$'DailyHygieneService\''' >> $SSUDS
-			echo '      am startservice '\'com.android.vending/com.google.android.finsky.dailyhygiene.DailyHygiene'$'DailyHygieneService\''' >> $SSUDS
-			echo '      am startservice '\'com.android.vending/com.google.android.finsky.hygiene.DailyHygiene'$'DailyHygieneService\''' >> $SSUDS
-			echo '      rm /su/su.d/99-ytva-detach.sh' >> $SSUDS
-			echo '  exit; fi' >> $SSUDS
-			echo 'done &)' >> $SSUDS
-		fi
-		umount /ssu 2>/dev/null
-		if [ "$ATTACHONLY" = "YES" ]; then
-		    ui_print "done! Please reboot."
-		    exit 0
-		fi
+	    ui_print "- Detach module will be removed from Supersu"
+	    mkdir /ssu
+	    mount -t ext4 -o rw $SUIMG /ssu
+	    rm $SQLITESU
+	    rm -f /data/ytva-detach-installed
+	    if [ -e $SSUDS ]; then
+		echo '#!/system/bin/sh' > $SSUDS
+		echo '' >> $SSUDS
+		echo '(while [ 1 ]; do' >> $SSUDS
+		echo '  if [ `getprop sys.boot_completed` = 1 ]; then sleep 60' >> $SSUDS
+		echo '      pm enable '\'com.android.vending/com.google.android.finsky.dailyhygiene.DailyHygiene'$'DailyHygieneService\''' >> $SSUDS
+		echo '      pm enable '\'com.android.vending/com.google.android.finsky.hygiene.DailyHygiene'$'DailyHygieneService\''' >> $SSUDS
+		echo '      am startservice '\'com.android.vending/com.google.android.finsky.dailyhygiene.DailyHygiene'$'DailyHygieneService\''' >> $SSUDS
+		echo '      am startservice '\'com.android.vending/com.google.android.finsky.hygiene.DailyHygiene'$'DailyHygieneService\''' >> $SSUDS
+		echo '      rm /su/su.d/99-ytva-detach.sh' >> $SSUDS
+		echo '  exit; fi' >> $SSUDS
+		echo 'done &)' >> $SSUDS
+	    fi
+	    umount /ssu 2>/dev/null
+	    if [ "$ATTACHONLY" = "YES" ]; then
+	        ui_print "Done! Please reboot."
+	        exit 0
+	    fi
 	else
-		if [ -e $INITD ]; then
-			ui_print "- Detach module will be removed from init.d"
-			echo '#!/system/bin/sh' > $INITD
-			echo '' >> $INITD
-			echo '(while [ 1 ]; do' >> $INITD
-			echo '  if [ `getprop sys.boot_completed` = 1 ]; then sleep 60' >> $INITD
-			echo '      pm enable '\'com.android.vending/com.google.android.finsky.dailyhygiene.DailyHygiene'$'DailyHygieneService\''' >> $INITD
-			echo '      pm enable '\'com.android.vending/com.google.android.finsky.hygiene.DailyHygiene'$'DailyHygieneService\''' >> $INITD
-			echo '      am startservice '\'com.android.vending/com.google.android.finsky.dailyhygiene.DailyHygiene'$'DailyHygieneService\''' >> $INITD
-			echo '      am startservice '\'com.android.vending/com.google.android.finsky.hygiene.DailyHygiene'$'DailyHygieneService\''' >> $INITD
-			echo '      mount -o rw,remount /system' >> $INITD
-			echo '      rm /system/etc/init.d/99-ytva-detach' >> $INITD
-			echo '  exit; fi' >> $INITD
-			echo 'done &)' >> $INITD
-			rm $SQLITES
-			rm -f /data/ytva-detach-installed
-			if [ "$ATTACHONLY" = "YES" ]; then
-			    ui_print "done! Please reboot."
-			    exit 0
-			fi
-		else
-			if [ -e $SUDS ]; then
-				ui_print "- Detach module will be removed from su.d"
-				echo '#!/system/bin/sh' > $SUDS
-				echo '' >> $SUDS
-				echo '(while [ 1 ]; do' >> $SUDS
-				echo '  if [ `getprop sys.boot_completed` = 1 ]; then sleep 60' >> $SUDS
-				echo '      pm enable '\'com.android.vending/com.google.android.finsky.dailyhygiene.DailyHygiene'$'DailyHygieneService\''' >> $SUDS
-				echo '      pm enable '\'com.android.vending/com.google.android.finsky.hygiene.DailyHygiene'$'DailyHygieneService\''' >> $SUDS
-				echo '      am startservice '\'com.android.vending/com.google.android.finsky.dailyhygiene.DailyHygiene'$'DailyHygieneService\''' >> $SUDS
-				echo '      am startservice '\'com.android.vending/com.google.android.finsky.hygiene.DailyHygiene'$'DailyHygieneService\''' >> $SUDS
-				echo '      mount -o rw,remount /system' >> $SUDS
-				echo '      rm /system/su.d/99-ytva-detach.sh' >> $SUDS
-				echo '  exit; fi' >> $SUDS
-				echo 'done &)' >> $SUDS
-				rm $SQLITES
-				rm -f /data/ytva-detach-installed
-				if [ "$ATTACHONLY" = "YES" ]; then
-				    ui_print "done! Please reboot."
-				    exit 0
-				fi
-			fi
-		fi
-		rm $ADDOND/90-ytva-detach.sh
+	    if [ -e $INITD ]; then
+		ui_print "- Detach module will be removed from init.d"
+		echo '#!/system/bin/sh' > $INITD
+		echo '' >> $INITD
+		echo '(while [ 1 ]; do' >> $INITD
+		echo '  if [ `getprop sys.boot_completed` = 1 ]; then sleep 60' >> $INITD
+		echo '      pm enable '\'com.android.vending/com.google.android.finsky.dailyhygiene.DailyHygiene'$'DailyHygieneService\''' >> $INITD
+		echo '      pm enable '\'com.android.vending/com.google.android.finsky.hygiene.DailyHygiene'$'DailyHygieneService\''' >> $INITD
+		echo '      am startservice '\'com.android.vending/com.google.android.finsky.dailyhygiene.DailyHygiene'$'DailyHygieneService\''' >> $INITD
+		echo '      am startservice '\'com.android.vending/com.google.android.finsky.hygiene.DailyHygiene'$'DailyHygieneService\''' >> $INITD
+		echo '      mount -o rw,remount /system' >> $INITD
+		echo '      rm /system/etc/init.d/99-ytva-detach' >> $INITD
+		echo '  exit; fi' >> $INITD
+		echo 'done &)' >> $INITD
 		rm $SQLITES
 		rm -f /data/ytva-detach-installed
 		if [ "$ATTACHONLY" = "YES" ]; then
-		    ui_print "done! Please reboot."
+		    ui_print "Done! Please reboot."
 		    exit 0
 		fi
+	    else
+		if [ -e $SUDS ]; then
+		    ui_print "- Detach module will be removed from su.d"
+		    echo '#!/system/bin/sh' > $SUDS
+		    echo '' >> $SUDS
+		    echo '(while [ 1 ]; do' >> $SUDS
+		    echo '  if [ `getprop sys.boot_completed` = 1 ]; then sleep 60' >> $SUDS
+		    echo '      pm enable '\'com.android.vending/com.google.android.finsky.dailyhygiene.DailyHygiene'$'DailyHygieneService\''' >> $SUDS
+		    echo '      pm enable '\'com.android.vending/com.google.android.finsky.hygiene.DailyHygiene'$'DailyHygieneService\''' >> $SUDS
+		    echo '      am startservice '\'com.android.vending/com.google.android.finsky.dailyhygiene.DailyHygiene'$'DailyHygieneService\''' >> $SUDS
+		    echo '      am startservice '\'com.android.vending/com.google.android.finsky.hygiene.DailyHygiene'$'DailyHygieneService\''' >> $SUDS
+		    echo '      mount -o rw,remount /system' >> $SUDS
+		    echo '      rm /system/su.d/99-ytva-detach.sh' >> $SUDS
+		    echo '  exit; fi' >> $SUDS
+		    echo 'done &)' >> $SUDS
+		    rm $SQLITES
+		    rm -f /data/ytva-detach-installed
+		    if [ "$ATTACHONLY" = "YES" ]; then
+		        ui_print "done! Please reboot."
+			exit 0
+		    fi
+		fi
+	    fi
+	    rm $ADDOND/90-ytva-detach.sh
+	    rm $SQLITES
+	    rm -f /data/ytva-detach-installed
+	    if [ "$ATTACHONLY" = "YES" ]; then
+		ui_print "done! Please reboot."
+		exit 0
+	    fi
 	fi
     fi
 fi
 
-# Use magisk installer if magisk setting file is available (this partially works also in Magisk manager but leads to empty files!! so disabled in bootmode now!!)
+# Use magisk installer if magisk setup file is available
 if [ "$UNINSTALL" = "NO" ] && [ "$DETACHONLY" = "NO" ] && [ "$ATTACHONLY" = "NO" ]; then
-    if $BOOTMODE; then
-        deny_bootup_mode
-    fi
     if [ "$MAGINSTALL" = "YES" ]; then
 	ui_print "- Using Magisk installer"
 	rm -f /data/ytva-root-install
     else
+	if $BOOTMODE; then
+	    deny_bootup_mode
+	fi
 	ui_print "- Using regular Root installer"
 	DOPOSTROOT=NO
 	echo "Please keep this file! It's a flag for the YTVA universal installer." > /data/ytva-root-install
@@ -824,11 +821,11 @@ if [ "$UNINSTALL" = "NO" ] && [ "$DETACHONLY" = "NO" ] && [ "$ATTACHONLY" = "NO"
 	ui_print "- Using $APK";
 	ui_print "- Removing previous versions (incl. magisk module)"
 	if [ -e $MAGIMG ]; then
-	    mount -t ext4 -o rw $MAGIMG $MAGISK
-	    if [ ! -e $MAGMOD ]; then
-		rm -rf $MAGMOD
+	    mount -t ext4 -o rw $MAGIMG $MOUNTPATH
+	    if [ -e $MOUNTPATH/YouTube-Vanced ]; then
+		rm -rf $MOUNTPATH/YouTube-Vanced
 	    fi
-	    umount $MAGISK
+	    umount $MOUNTPATH
 	fi
 	rm -rf /data/app/com.google.android.youtube*
 	rm -rf /$SYSAPPFOLDER/YouTube
@@ -841,7 +838,7 @@ if [ "$UNINSTALL" = "NO" ] && [ "$DETACHONLY" = "NO" ] && [ "$ATTACHONLY" = "NO"
 	rm -rf /$SYSAPPFOLDERPRIV/youtube.apk!
 	# Oreo specific: remove previous YT traces
 	if [ -e /data/system/package_cache ]; then
-	    ui_print "- We are on Oreo removing YouTube caches"
+	    ui_print "- We are on Oreo, removing YouTube app caches"
 	    rm -f /data/system/package_cache/1/YouTube*
 	    rm -f /data/dalvik-cache/arm64/system@app@YouTube@YouTube.apk@classes.dex
 	    rm -f /data/dalvik-cache/arm64/system@app@YouTube@YouTube.apk@classes.vdex
@@ -874,7 +871,6 @@ if [ "$UNINSTALL" = "NO" ] && [ "$DETACHONLY" = "NO" ] && [ "$ATTACHONLY" = "NO"
 	find /$SYSAPPFOLDER/YouTube -type f -exec chmod 644 {} \;
 	find /$SYSAPPFOLDER/YouTube -type d -exec chmod 755 {} \;
 	chmod 755 /$SYSAPPFOLDER/YouTube
-
 	if [ -e /system/addon.d ]; then
 	    ui_print "- Installing addon.d script"
 	    # remove old script if available
@@ -882,7 +878,6 @@ if [ "$UNINSTALL" = "NO" ] && [ "$DETACHONLY" = "NO" ] && [ "$ATTACHONLY" = "NO"
 	    cp -af $INSTALLER/common/97-ytva.sh $SYSADDFOLDER/97-ytva.sh
 	    chmod 755 $SYSADDFOLDER/97-ytva.sh
 	fi
-
 	if [ "$ATTACH" = "YES" -o "$DETACH" = "YES" ]; then
 	    ui_print "- Root installer done!"
 	    if [ -e $MAGIMG ]; then
@@ -921,7 +916,7 @@ if [ "$MAGINSTALL" = "YES" -o "$UNINSTALL" = "YES" ]; then
     rm -rf /$SYSAPPFOLDERPRIV/youTube.apk!
     # Oreo specific: remove previous YT traces
     if [ -e /data/system/package_cache ]; then
-        ui_print "- We are on Oreo removing YouTube caches"
+        ui_print "- We are on Oreo, removing YouTube caches"
         rm -f /data/system/package_cache/1/YouTube*
         rm -f /data/dalvik-cache/arm64/system@app@YouTube@YouTube.apk@classes.dex
         rm -f /data/dalvik-cache/arm64/system@app@YouTube@YouTube.apk@classes.vdex
@@ -940,7 +935,7 @@ if ! $BOOTMODE; then
     umount /system 2>/dev/null
 fi
 
-# exit here if we uninstall and no magisk is used but go on if we need to attach
+# Exit here if we uninstall and no magisk is used but go on if we need to attach
 if [ "$DOPOSTROOT" = "" ] && [ "$ATTACH" = "NO" ]; then
     if [ -e /data/ytva-root-install -a "$UNINSTALL" = "YES" ]; then
 	rm -f /data/ytva-root-install
@@ -961,14 +956,16 @@ else
     mount /data 2>/dev/null
 fi
 
+OUTFD=$2;
+
 # Load utility functions
 if [ -f /data/adb/magisk/util_functions.sh ]; then
-  . /data/adb/magisk/util_functions.sh
+    . /data/adb/magisk/util_functions.sh
 elif [ -f /data/magisk/util_functions.sh ]; then
-  NVBASE=/data
-  . /data/magisk/util_functions.sh
+    NVBASE=/data
+    . /data/magisk/util_functions.sh
 else
-  require_new_magisk
+    require_new_magisk
 fi
 
 # Use alternative image if in BOOTMODE
@@ -1013,41 +1010,54 @@ if [ "$UNINSTALL" = "NO" ]; then
     ui_print "**********************************"
 fi
 
-# YTVA Magisk installer mode
-if [ "$UNINSTALL" = "NO" ]; then
-    if [ "$MAGINSTALL" = "YES" ]; then
-	ui_print "- Using $APK"
-	rm -f $INSTALLER/system/placeholder
-	mkdir -p $INSTALLER/$SYSAPPFOLDER/YouTube/tmp
-	cd $INSTALLER/$SYSAPPFOLDER/YouTube/tmp
-	unzip -o "$APK" -d . > /dev/null 2>&1
-	mv lib ..
-	cd ..
-	rm -rf tmp
-	cp "$APK" YouTube.apk
-	cd lib
-	if [ -e armeabi-v7a ]; then
-	    ln -s armeabi-v7a armeabi
-	    ln -s armeabi-v7a arm
-	fi
-	if [ -e arm64-v8a ]; then
-	    ln -s arm64-v8a arm64
-	fi
-	cd ..
+# YTVA preperation for Magisk installer mode
+if [ "$UNINSTALL" = "NO" -a "$MAGINSTALL" = "YES" ]; then
+    ui_print "- Using $APK"
+    rm -f $INSTALLER/system/placeholder
+    mkdir -p $INSTALLER/$SYSAPPFOLDER/YouTube/tmp
+    cd $INSTALLER/$SYSAPPFOLDER/YouTube/tmp
+    unzip -o "$APK" -d . > /dev/null 2>&1
+    mv lib ..
+    cd ..
+    rm -rf tmp
+    cp "$APK" YouTube.apk
+    cd lib
+    if [ -e armeabi-v7a ]; then
+        mv armeabi-v7a arm
     fi
-
-    # Get the variable reqSizeM. Use your own method to determine reqSizeM if needed
-    request_zip_size_check "$ZIP"
+    if [ -e arm64-v8a ]; then
+        mv arm64-v8a arm64
+    fi
+    cd ..
 fi
+
+# Get the variable reqSizeM. Use your own method to determine reqSizeM if needed
+apkSizeM=0
+zipSizeM=0
+request_zip_size_check "$ZIP"
+zipSizeM=$reqSizeM
+
+# Get the size of the used apk
+if [ ! -z "$APK" ]; then
+    request_size_check "$APK"
+    apkSizeM=$reqSizeM
+    # Safety margin of factor 2 (for libs etc)
+    apkSizeM=$(( $reqSizeM * 2 ))
+fi
+
+# Sum for the total size
+reqSizeM=$(( $zipSizeM + $apkSizeM ))
 
 # This function will mount $IMG to $MOUNTPATH, and resize the image based on $reqSizeM
 mount_magisk_img
 
-# Uninstall YTVA modules if requested
+# Remove YTVA and detach module if requested or only remove YTVA module if we are installing root version
 if [ "$UNINSTALL" = "YES" -o "$DOPOSTROOT" = "YES" ]; then
-    ui_print "- Removing YTVA modules"
-    if [ -e $MAGMOD -a "$UNINSTALL" = "YES" ]; then
-        DETACH=NO
+    ui_print "- Removing YTVA module and/or detach module if available"
+    MAGMOD=$MOUNTPATH/YouTube-Vanced
+    MAGMODD=$MOUNTPATH/YouTube-Vanced-Detach
+    if [ -e $MAGMODD -a "$UNINSTALL" = "YES" ]; then
+	DETACH=NO
 	ATTACH=YES
     fi
     if [ -e $MAGMOD ]; then
@@ -1057,52 +1067,62 @@ fi
 
 # Generate/install YTVA detach module
 if [ "$DETACH" = "YES" -o "$DETACHONLY" = "YES" ]; then
-	if ! $BOOTMODE; then
-	    MAGMOD=$MOUNTPATH/Youtube-Vanced-Detach
-	    SQLITEM=$MAGMOD/sqlite
-	    MAGSH=$MAGMOD/post-fs-data.sh
-	fi;
-	if [ ! -e $MAGMOD ]; then
-		mkdir $MAGMOD
-	fi
-	ui_print "- Generating and copying detach module files"
-	cp -f "$SQLITEMP" "$SQLITEM"
-	chgrp 2000 "$SQLITEM"
-	chmod 0755 $SQLITEM
-	cp -f "$DETACHFILE" "$MAGSH"
-	chmod 0755 $MAGSH
-	touch $MAGMOD/module.prop
-	chmod 0644 $MAGMOD/module.prop
-	echo 'id=YouTube-Vanced-Detach' > $MAGMOD/module.prop
-	echo 'name=YouTube Vanced Detach' >> $MAGMOD/module.prop
-	echo 'version=v1.4 (created by universal installer)' >> $MAGMOD/module.prop
-	echo 'versionCode=6' >> $MAGMOD/module.prop
-	echo 'author=Team Vanced' >> $MAGMOD/module.prop
-	echo 'description=Detach playstore link of Youtube Vanced app. based on original detach script v2.6 by hinxnz' >> $MAGMOD/module.prop
-	echo 'support=http://forum.xda-developers.com/android/software-hacking/mod-detach-market-links-theme-ready-apps-t3447494' >> $MAGMOD/module.prop
-	echo 'minMagisk=17000' >> $MAGMOD/module.prop
-	ui_print "- Detach module created, unmounting $MOUNTPATH again"
-	echo  > /data/ytva-detach-installed
+    if ! $BOOTMODE; then
+        MAGMOD=$MOUNTPATH/YouTube-Vanced-Detach
+        SQLITEM=$MAGMOD/sqlite
+        MAGSH=$MAGMOD/post-fs-data.sh
+    fi;
+    if [ ! -e $MAGMOD ]; then
+	mkdir $MAGMOD
+    fi
+    ui_print "- Generating and copying detach module files"
+    cp -f "$SQLITEMP" "$SQLITEM"
+    chgrp 2000 "$SQLITEM"
+    chmod 0755 $SQLITEM
+    cp -f "$DETACHFILE" "$MAGSH"
+    chmod 0755 $MAGSH
+    touch $MAGMOD/module.prop
+    chmod 0644 $MAGMOD/module.prop
+    echo 'id=YouTube-Vanced-Detach' > $MAGMOD/module.prop
+    echo 'name=YouTube Vanced Detach' >> $MAGMOD/module.prop
+    echo 'version=v1.4 (created by universal installer)' >> $MAGMOD/module.prop
+    echo 'versionCode=6' >> $MAGMOD/module.prop
+    echo 'author=Team Vanced' >> $MAGMOD/module.prop
+    echo 'description=Detach playstore link of Youtube Vanced app. based on original detach script v2.6 by hinxnz' >> $MAGMOD/module.prop
+    echo 'support=http://forum.xda-developers.com/android/software-hacking/mod-detach-market-links-theme-ready-apps-t3447494' >> $MAGMOD/module.prop
+    echo 'minMagisk=17000' >> $MAGMOD/module.prop
+    if $BOOTMODE; then
+	mktouch $MAGMOD/update
+    fi
+    ui_print "- Detach module created, unmounting $MOUNTPATH again"
+    echo > /data/ytva-detach-installed
 fi
 
 # Generate/install YTVA attach script
 if [ "$ATTACH" = "YES" -o "$ATTACHONLY" = "YES" ]; then
-	rm $SQLITEM
-	rm -f /data/ytva-detach-installed
-	if [ -e $MAGSH ]; then
-		echo '#!/system/bin/sh' > $MAGSH
-		echo '' >> $MAGSH
-		echo '(while [ 1 ]; do' >> $MAGSH
-		echo '  if [ `getprop sys.boot_completed` = 1 ]; then sleep 60' >> $MAGSH
-		echo '      pm enable '\'com.android.vending/com.google.android.finsky.dailyhygiene.DailyHygiene'$'DailyHygieneService\''' >> $MAGSH
-		echo '      pm enable '\'com.android.vending/com.google.android.finsky.hygiene.DailyHygiene'$'DailyHygieneService\''' >> $MAGSH
-		echo '      am startservice '\'com.android.vending/com.google.android.finsky.dailyhygiene.DailyHygiene'$'DailyHygieneService\''' >> $MAGSH
-		echo '      am startservice '\'com.android.vending/com.google.android.finsky.hygiene.DailyHygiene'$'DailyHygieneService\''' >> $MAGSH
-		echo '      rm -r /sbin/.core/img/Youtube-Vanced-Detach' >> $MAGSH
-		echo '  exit; fi' >> $MAGSH
-		echo 'done &)' >> $MAGSH
-		ui_print "- Attach script created, unmounting $MOUNTPATH again"
-	fi
+    if ! $BOOTMODE; then
+        MAGMOD=$MOUNTPATH/YouTube-Vanced-Detach
+        SQLITEM=$MAGMOD/sqlite
+        MAGSH=$MAGMOD/post-fs-data.sh
+    fi;
+    rm $SQLITEM
+    rm -f /data/ytva-detach-installed
+    if [ -e $MAGSH ]; then
+	echo '#!/system/bin/sh' > $MAGSH
+	echo '' >> $MAGSH
+	echo 'rm -f /cache/enable_detach' >> $MAGSH
+	echo 'rm -f /cache/detach.log' >> $MAGSH
+	echo '(while [ 1 ]; do' >> $MAGSH
+	echo '  if [ `getprop sys.boot_completed` = 1 ]; then sleep 120' >> $MAGSH
+	echo '      pm enable '\'com.android.vending/com.google.android.finsky.dailyhygiene.DailyHygiene'$'DailyHygieneService\''' >> $MAGSH
+	echo '      pm enable '\'com.android.vending/com.google.android.finsky.hygiene.DailyHygiene'$'DailyHygieneService\''' >> $MAGSH
+	echo '      am startservice '\'com.android.vending/com.google.android.finsky.dailyhygiene.DailyHygiene'$'DailyHygieneService\''' >> $MAGSH
+	echo '      am startservice '\'com.android.vending/com.google.android.finsky.hygiene.DailyHygiene'$'DailyHygieneService\''' >> $MAGSH
+	echo '      rm -r /sbin/.core/img/YouTube-Vanced-Detach' >> $MAGSH
+	echo '  exit; fi' >> $MAGSH
+	echo 'done &)' >> $MAGSH
+	ui_print "- Attach script created, unmounting $MOUNTPATH again"
+    fi
 fi
 
 # If we are using Magisk installer do all the "magisk" :)
@@ -1113,8 +1133,8 @@ if [ "$MAGINSTALL" = "YES" ]; then
     mkdir -p $MODPATH
 
     # Copy files
-    ui_print "- Copying YTVA Vanced module files"
-    mv $INSTALLER/system $MODPATH/system
+    ui_print "- Copying YTVA module files"
+    cp -af $INSTALLER/system $MODPATH/system
 
     # Handle replace folders
     for TARGET in $REPLACE; do
@@ -1147,7 +1167,7 @@ fi
 if [ "$UNINSTALL" = "NO" ]; then
     ui_print "- Setting permissions"
     set_permissions
-    # addidtional needed because subfolders under lib dont get set properly
+    # in addition needed because subfolders under lib don't get set properly
     find $MODPATH/system/app/YouTube/lib -type d -exec chmod 755 {} \;
 fi
 

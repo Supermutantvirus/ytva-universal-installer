@@ -12,9 +12,9 @@ MODDIR=${0%/*}
 # How it works
 # ------------
 # If the file /cache/enable_detach exists the detachment loop starts after booting via magisk's post-fs-data handling
-# and does it's thing periodically at a given interval. this is by default once every 15000 cycles of the loop (can be
-# adjusted during runtime by putting a value into the enable_detach file!) which is approx. every 2 mins. unfortunately
-# this can't be said exactly because of the influence of sleep events of the android system, so expect much longer delays
+# and does it's thing periodically at a given interval. this is by default once every 180 seconds (this delay can be
+# adjusted during runtime by putting a value into the enable_detach file!) which is every 2 mins. unfortunately
+# this can't be said exactly because of the influence of sleep  events of the android system, so expect much longer delays
 # or even complete stops during that phases! the running loop can be stopped either by deleting the file 'enable_detach'
 # in /cache directory (attention apps then stays in a detached state!) or by putting the file disable_detach into
 # /cache dir (recommended!) by doing the latter the disabled services are getting enabled again and detached app(s)
@@ -55,17 +55,13 @@ MAX_LOG_ENTRIES=250;
 # counter for log entries (initial, don't change that value)
 LOG_ENTRIES=0;
 
-# counter for loop iterations (initial, don't change that value)
-LOOP_COUNT=0;
+# default amount of seconds for delay (decrease this for faster checks, increase it for slower checks)
+LOOP_DELAY=180;
 
-# default amount of iterations for delay (decrease this for faster checks, increase it for slower checks)
-LOOP_DELAY=15000;
-
-# max iterations = loop delay
 # NOTE: u can overwrite this during runtime by putting a value into the /cache/enable_detach file
-# the default value below is used for the initial start delay of approx. 60 seconds after boot and the second
-# default delay (LOOP_DELAY) of 15000 = approx. 2 mins is used for the delay of the running loop
-DELAY=9000;
+# the default value below is used for the initial start delay of 60 seconds after boot and the second
+# default delay (LOOP_DELAY) of 180 = 3 mins is used for the delay of the running loop
+DELAY=60;
 
 logcount() {
 LOG_ENTRIES=$((LOG_ENTRIES+1));
@@ -85,7 +81,7 @@ if [ ! -z "$CHECK" ]; then
 	pm disable 'com.android.vending/com.google.android.finsky.hygiene.DailyHygiene$DailyHygieneService';
     else
 	echo -n `date +%H:%M:%S` >> $LOGFILE;
-	echo " - Soft detachment is used!" >> $LOGFILE;
+	echo " - Soft detachment is used, no services changed!" >> $LOGFILE;
     fi;
     am force-stop com.android.vending;
 fi;
@@ -105,12 +101,17 @@ else
 fi;
 }
 
+# force enable here when universal installer was used
+if [ -e /data/ytva-detach-installed ] && [ ! -e $DETACH_ENABLED ]; then
+    echo "" > /cache/enable_detach;
+fi;
+
 if [ ! -e $DETACH_ENABLED ] && [ ! -e $DETACH_DISABLED ]; then
     echo "" >> $LOGFILE;
-    echo " No option files found in /cache! nothing to do!" > $LOGFILE;
-    echo " You have to put at least a file called 'enable_detach'" >> $LOGFILE;
-    echo " into /cache directory to make things start" >> $LOGFILE;
-    echo " Exiting the script now, no further execution until next boot" >> $LOGFILE;
+    echo "No option files found in /cache! nothing to do!" > $LOGFILE;
+    echo "You have to put at least a file called 'enable_detach'" >> $LOGFILE;
+    echo "into /cache directory to make things start" >> $LOGFILE;
+    echo "Exiting the script now, no further execution until next boot" >> $LOGFILE;
     exit 1;
 fi;
 
@@ -118,15 +119,12 @@ fi;
 while [ 1 ]; do
     if [ `getprop sys.boot_completed` = 1 ]; then
 	if [ ! -e $NOLOOP ]; then
-	    LOOP_COUNT=$((LOOP_COUNT+1));
-	    if [[ "$LOOP_COUNT" -lt "$DELAY" ]]; then
-	        continue;
-	    fi;
+	    sleep $DELAY;
 	fi;
 	if [ "$LOG_ENTRIES" = 0 ] && [ ! -e $NOLOOP ]; then
 	    echo "--- LOOP STARTED" `date` > $LOGFILE;
 	    echo -n `date +%H:%M:%S` >> $LOGFILE;
-	    echo " - Next check in $DELAY iterations" >> $LOGFILE;
+	    echo " - Next check in $DELAY seconds" >> $LOGFILE;
 	fi;
 	if [ -e $DETACH_DISABLED ]; then
 	    if [ ! -e $SOFT_DETACH ]; then
@@ -140,9 +138,9 @@ while [ 1 ]; do
 	    rm -f $SOFT_DETACH;
 	    echo -n `date +%H:%M:%S` >> $LOGFILE;
 	    echo "" >> $LOGFILE;
-	    echo " All disabled services enabled again, apps should get attached to playstore again soon!" >> $LOGFILE;
-	    echo " NOTE: Enabling of detachment removed from subsequent boot" >> $LOGFILE;
-	    echo " Exiting the loop now, no further execution until next boot" >> $LOGFILE;
+	    echo "All disabled services enabled again, apps should get attached to playstore again soon!" >> $LOGFILE;
+	    echo "NOTE: Enabling of detachment removed from subsequent boot" >> $LOGFILE;
+	    echo "Exiting the loop now, no further execution until next boot" >> $LOGFILE;
 	    echo "--- LOOP STOPPED" `date` >> $LOGFILE;
 	    break;
 	elif [ -e $DETACH_ENABLED ]; then
@@ -166,25 +164,24 @@ while [ 1 ]; do
 		detach_prepare;
 	        detach;
 	    elif [ -z $DEF_PKG_NAME ]; then
-		echo " No app package name(s) defined! exiting..." >> $LOGFILE;
+		echo "No app package name(s) defined! exiting..." >> $LOGFILE;
 		break;
 	    fi;
 	fi;
 	if [ ! -e $DETACH_ENABLED ] && [ ! -e $DETACH_DISABLED ]; then
 	    echo -n `date +%H:%M:%S` >> $LOGFILE;
 	    echo "" >> $LOGFILE;
-	    echo " All option files removed from /cache dir!" >> $LOGFILE;
-	    echo " NOTE: if apps were already detached they stay in that state! If u want to" >> $LOGFILE;
-	    echo " attach it again put a empty file named 'disable_detach' into /cache dir and reboot" >> $LOGFILE;
-	    echo " Exiting the loop now, no further execution until next boot" >> $LOGFILE;
+	    echo "All option files removed from /cache dir!" >> $LOGFILE;
+	    echo "NOTE: if apps were already detached they stay in that state! If u want to" >> $LOGFILE;
+	    echo "attach it again put a empty file named 'disable_detach' into /cache dir and reboot" >> $LOGFILE;
+	    echo "Exiting the loop now, no further execution until next boot" >> $LOGFILE;
 	    echo "--- LOOP STOPPED" `date` >> $LOGFILE;
 	    break;
 	fi;
 	if [ ! -e $NOLOOP ]; then
 	    echo -n `date +%H:%M:%S` >> $LOGFILE;
-	    echo " - Next check in $DELAY iterations" >> $LOGFILE;
+	    echo " - Next check in $DELAY seconds" >> $LOGFILE;
 	    logcount;
-	    LOOP_COUNT=0;
 	else
 	    echo -n `date +%H:%M:%S` >> $LOGFILE;
 	    echo " - Manual execution, next check defined externally" >> $LOGFILE;

@@ -49,7 +49,7 @@ Corresponding setup file: **ytva\_delete\_data.plz**
 
 **DETACH="NO"**
 
-Function: Detach Youtube app from playstore to disable update notifications (installation with ytva module in addition)
+Function: Detach Youtube app from playstore to disable update notifications (only for installation with ytva module in addition)
 
 Possible values: YES/NO
 
