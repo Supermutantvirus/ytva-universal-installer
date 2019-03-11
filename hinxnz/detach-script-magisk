@@ -32,22 +32,22 @@ SQLITE_DIR=$MODDIR;
 DEF_PKG_NAME=com.google.android.youtube;
 
 # detach option file to enable detachment
-DETACH_ENABLED=/cache/enable_detach;
+DETACH_ENABLED=/cache/uimod_enable_detach;
 
 # 'soft' detach option file for detaching without touching any services
-SOFT_DETACH=/cache/soft_detach;
+SOFT_DETACH=/cache/uimod_soft_detach;
 
 # attach option file to disable detachment (overrules detach option file!)
-DETACH_DISABLED=/cache/disable_detach;
+DETACH_DISABLED=/cache/uimod_disable_detach;
 
 # option file which makes the script 'one shot' instead of looping (=manual mode for external execution)
-NOLOOP=/cache/noloop_detach;
+NOLOOP=/cache/uimod_noloop_detach;
 
 # custom detach file which can contain custom package names to detach (optional) NOTE: u have to terminate the list with a empty line
-CUSTOM_DETACH=/cache/custom_detach;
+CUSTOM_DETACH=/cache/uimod_custom_detach;
 
 # location and name of the log file
-LOGFILE=/cache/detach.log;
+LOGFILE=/cache/uimod_detach.log;
 
 # maximal entries in the log file after which it gets automatically flushed
 MAX_LOG_ENTRIES=250;
@@ -101,14 +101,19 @@ else
 fi;
 }
 
-# force enable here when universal installer was used
-if [ -e /data/ytva-detach-installed ] && [ ! -e $DETACH_ENABLED ]; then
-    echo "" > /cache/enable_detach;
+# force enable here when universal installer module was used and disable a possible enabled YT vanced detach script from magisk repos (priorize the dedicated module)
+if [ -e /data/ytva-detach-installed ]; then
+    echo "" > $DETACH_ENABLED;
+    if [ -d /sbin/.core/img/iYTBP-Vanced-black-Magisk-Repo ] || [ -d /sbin/.core/img/iYTBP-Vanced-Magisk-Repo ]; then
+	if [ -e /cache/enable_detach ]; then
+	    rm -f /cache/enable_detach;
+	fi;
+    fi;
 fi;
 
 if [ ! -e $DETACH_ENABLED ] && [ ! -e $DETACH_DISABLED ]; then
-    echo "" >> $LOGFILE;
-    echo "No option files found in /cache! nothing to do!" > $LOGFILE;
+    echo "" > $LOGFILE;
+    echo "No option files found in /cache! nothing to do!" >> $LOGFILE;
     echo "You have to put at least a file called 'enable_detach'" >> $LOGFILE;
     echo "into /cache directory to make things start" >> $LOGFILE;
     echo "Exiting the script now, no further execution until next boot" >> $LOGFILE;
