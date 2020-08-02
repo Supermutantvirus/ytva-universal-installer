@@ -5,7 +5,7 @@ You can use this zip package here to do following:
 
 - install the app as a system app (root version of ytva needed)
 - install the app as magisk module (root version of ytva needed)
-- install a magisk module which executes a [detach script](https://github.com/Magisk-Modules-Repo/iYTBP-Vanced-Magisk-Repo/blob/master/common/post-fs-data.sh) to remove the update notification from playstore
+- install a magisk module which executes a [detach script](https://github.com/zanezam/OBSOLETE-iYTBP-Vanced-Magisk-Repo/blob/master/common/post-fs-data.sh) to remove the update notification from playstore
 - uninstall system app/magisk module/detach module and attach app to playstore again
 - use the zip in TWRP (or compatible recovery) and in magisk manager (only partially supported!)
 
